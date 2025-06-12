@@ -1,0 +1,12 @@
+#+title: Readme
+* API :verb:
+template http://localhost:5000
+Accept: application/json
+** Haal alle gebruikers op
+get /user
+** Hernoem gebruikersnaam
+put /user/1/username
+
+"test"
+** Bekijk alle bestanden en mappen van een gebruiker
+get /user/3/file
