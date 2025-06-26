@@ -1,22 +1,18 @@
 <Project Sdk="Microsoft.NET.Sdk">
 
 	<PropertyGroup>
-		<OutputType>Exe</OutputType>
 		<TargetFramework>net8.0</TargetFramework>
+		<GenerateDocumentationFile>true</GenerateDocumentationFile>
 	</PropertyGroup>
 
 	<ItemGroup>
-		<Compile Include="Program.fs" />
+		<Compile Include="Web.fs" />
+		<Compile Include="Library.fs" />
 	</ItemGroup>
 
 	<ItemGroup>
 		<PackageReference Include="Giraffe" Version="7.0.2" />
 		<PackageReference Include="Thoth.Json.Net" Version="12.0.0" />
-	</ItemGroup>
-
-	<ItemGroup>
-		<ProjectReference Include="DataAccess\DataAccess.fsproj" />
-		<ProjectReference Include="Service\Service.fsproj" />
 	</ItemGroup>
 
 </Project>
