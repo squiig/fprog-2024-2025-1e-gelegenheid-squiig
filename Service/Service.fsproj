@@ -8,7 +8,6 @@
 	<ItemGroup>
 		<Compile Include="Serialization.fs" />
 		<Compile Include="Web.fs" />
-		<Compile Include="Library.fs" />
 	</ItemGroup>
 
 	<ItemGroup>
@@ -18,6 +17,11 @@
 
 	<ItemGroup>
 	  <ProjectReference Include="..\Application\Application.fsproj" />
+	</ItemGroup>
+
+	<ItemGroup>
+	  <Folder Include="Entry\" />
+	  <Folder Include="User\" />
 	</ItemGroup>
 
 </Project>

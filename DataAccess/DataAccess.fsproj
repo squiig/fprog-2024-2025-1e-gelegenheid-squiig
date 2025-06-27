@@ -7,11 +7,15 @@
 
   <ItemGroup>
     <Compile Include="SimulatedDatabase.fs" />
-    <Compile Include="Library.fs" />
   </ItemGroup>
 
   <ItemGroup>
     <ProjectReference Include="..\Application\Application.fsproj" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <Folder Include="Entry\" />
+    <Folder Include="User\" />
   </ItemGroup>
 
 </Project>

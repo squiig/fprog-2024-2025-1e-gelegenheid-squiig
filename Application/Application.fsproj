@@ -6,11 +6,12 @@
   </PropertyGroup>
 
   <ItemGroup>
-    <Compile Include="Library.fs" />
+    <ProjectReference Include="..\Model\Model.fsproj" />
   </ItemGroup>
 
   <ItemGroup>
-    <ProjectReference Include="..\Model\Model.fsproj" />
+    <Folder Include="Entry\" />
+    <Folder Include="User\" />
   </ItemGroup>
 
 </Project>
