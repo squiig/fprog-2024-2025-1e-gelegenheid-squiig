@@ -1,14 +1,14 @@
-namespace DrizzleCarton
+module DrizzleCarton.SimulatedDatabase
 
 type UserTuple = int * string * int * int
 type EntryTuple = int * string * Option<int> * string * int
 
-type Database =
+type SimulatedDatabase =
     private
         { mutable Users: Map<int, UserTuple>
           mutable Entries: Map<int, EntryTuple> }
 
-module Database =
+module SimulatedDatabase =
     let connect () =
         let users =
             [ 1, "janne", 1073741824, 1
@@ -42,18 +42,18 @@ module Database =
             |> List.map (fun (id, name, parentId, kind, size) -> id, (id, name, parentId, kind, size))
             |> Map.ofList
 
-        { Database.Users = users
-          Database.Entries = entries }
+        { SimulatedDatabase.Users = users
+          SimulatedDatabase.Entries = entries }
 
-    type DatabaseError = NotFound of int
+    type SimulatedDatabaseError = NotFound of int
 
 
-    let user (id: int) (db: Database) : Result<UserTuple, DatabaseError> =
+    let user (id: int) (db: SimulatedDatabase) : Result<UserTuple, SimulatedDatabaseError> =
         match db.Users |> Map.tryFind id with
         | Some user -> Ok user
         | None -> Error(NotFound id)
 
-    let addUser (db: Database) (username: string, quota: int, rootFolder: int) : Result<UserTuple, DatabaseError> =
+    let addUser (db: SimulatedDatabase) (username: string, quota: int, rootFolder: int) : Result<UserTuple, SimulatedDatabaseError> =
         let id =
             if Map.isEmpty db.Users then
                 1
@@ -64,10 +64,10 @@ module Database =
         db.Users <- Map.add id user db.Users
         Ok user
 
-    let users (db: Database) : Result<UserTuple list, DatabaseError> =
+    let users (db: SimulatedDatabase) : Result<UserTuple list, SimulatedDatabaseError> =
         db.Users |> Map.values |> List.ofSeq |> Ok
 
-    let updateUser (db: Database) (id, username, quota, rootFolder) : Result<UserTuple, DatabaseError> =
+    let updateUser (db: SimulatedDatabase) (id, username, quota, rootFolder) : Result<UserTuple, SimulatedDatabaseError> =
         match db.Users |> Map.tryFind id with
         | Some user ->
             let updatedUser = id, username, quota, rootFolder
@@ -75,17 +75,17 @@ module Database =
             Ok updatedUser
         | None -> Error(NotFound id)
 
-    let entries (db: Database) : Result<List<EntryTuple>, DatabaseError> =
+    let entries (db: SimulatedDatabase) : Result<List<EntryTuple>, SimulatedDatabaseError> =
         db.Entries |> Map.values |> List.ofSeq |> Ok
 
 
-    let entry (db: Database) (id: int) =
+    let entry (db: SimulatedDatabase) (id: int) =
         db.Entries
         |> Map.tryFind id
         |> Option.map Ok
         |> Option.defaultWith (fun _ -> Error(NotFound id))
 
-    let addEntry (db: Database) (name, parent, kind, size) =
+    let addEntry (db: SimulatedDatabase) (name, parent, kind, size) =
         let nextId =
             if Map.isEmpty db.Entries then
                 1
@@ -98,7 +98,7 @@ module Database =
 
 
 
-    let subEntries (db: Database) (id: int) : Result<List<EntryTuple>, DatabaseError> =
+    let subEntries (db: SimulatedDatabase) (id: int) : Result<List<EntryTuple>, SimulatedDatabaseError> =
         db.Entries
         |> Map.filter (fun _ (_, _, parentId, _, _) -> parentId = Some id)
         |> Map.values

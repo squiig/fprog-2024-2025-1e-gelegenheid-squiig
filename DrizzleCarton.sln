@@ -12,6 +12,9 @@ EndProject
 Project("{6EC3EE1D-3C4E-46DD-8F32-0CC8E7565705}") = "DataAccess", "DataAccess\DataAccess.fsproj", "{924D0496-5A40-408C-B558-9802635BFCE3}"
 EndProject
 Project("{6EC3EE1D-3C4E-46DD-8F32-0CC8E7565705}") = "Service", "Service\Service.fsproj", "{03AB36B5-D767-4BE8-8BB1-F4FAE19FC543}"
+	ProjectSection(ProjectDependencies) = postProject
+		{B0905CAF-6771-44CA-BB89-83E4C6FDFA68} = {B0905CAF-6771-44CA-BB89-83E4C6FDFA68}
+	EndProjectSection
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution

@@ -6,8 +6,12 @@
   </PropertyGroup>
 
   <ItemGroup>
-    <Compile Include="Database.fs" />
+    <Compile Include="SimulatedDatabase.fs" />
     <Compile Include="Library.fs" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\Application\Application.fsproj" />
   </ItemGroup>
 
 </Project>
