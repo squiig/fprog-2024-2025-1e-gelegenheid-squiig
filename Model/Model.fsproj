@@ -6,12 +6,9 @@
   </PropertyGroup>
 
   <ItemGroup>
+    <Compile Include="Entry\Entry.fs" />
     <Compile Include="User\User.fs" />
     <Compile Include="Model.fs" />
-  </ItemGroup>
-
-  <ItemGroup>
-    <Folder Include="Entry\" />
   </ItemGroup>
 
 </Project>

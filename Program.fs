@@ -2,9 +2,11 @@ open Microsoft.AspNetCore.Builder
 open Microsoft.AspNetCore.Hosting
 open Microsoft.Extensions.Hosting
 open Microsoft.Extensions.DependencyInjection
-open Giraffe
-open DrizzleCarton
 
+open Giraffe
+
+open DrizzleCarton.DataAccess
+open DrizzleCarton.Service
 
 let report<'T> (result: Result<'T, Database.DatabaseError>) =
   match result with
