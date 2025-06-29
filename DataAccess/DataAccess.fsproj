@@ -6,6 +6,7 @@
   </PropertyGroup>
 
   <ItemGroup>
+    <Compile Include="User\User.fs" />
     <Compile Include="SimulatedDatabase.fs" />
   </ItemGroup>
 
@@ -15,7 +16,6 @@
 
   <ItemGroup>
     <Folder Include="Entry\" />
-    <Folder Include="User\" />
   </ItemGroup>
 
 </Project>
