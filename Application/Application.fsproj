@@ -1,4 +1,4 @@
-<Project Sdk="Microsoft.NET.Sdk">
+﻿<Project Sdk="Microsoft.NET.Sdk">
 
   <PropertyGroup>
     <TargetFramework>net8.0</TargetFramework>
@@ -6,15 +6,13 @@
   </PropertyGroup>
 
   <ItemGroup>
+    <Compile Include="Util.fs" />
+    <Compile Include="Entry\Entry.fs" />
     <Compile Include="User\User.fs" />
   </ItemGroup>
 
   <ItemGroup>
     <ProjectReference Include="..\Model\Model.fsproj" />
-  </ItemGroup>
-
-  <ItemGroup>
-    <Folder Include="Entry\" />
   </ItemGroup>
 
 </Project>

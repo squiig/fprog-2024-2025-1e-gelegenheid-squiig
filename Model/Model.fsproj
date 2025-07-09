@@ -8,7 +8,6 @@
   <ItemGroup>
     <Compile Include="Entry\Entry.fs" />
     <Compile Include="User\User.fs" />
-    <Compile Include="Model.fs" />
   </ItemGroup>
 
 </Project>
