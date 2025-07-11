@@ -24,3 +24,5 @@ let noForwardSlashes invalid (s: string) =
 
 let noBackwardSlashes invalid (s: string) =
   if s.Contains '\\' then Error invalid else Ok s
+
+let nonNegativeNumber invalid n = if n < 0 then Error invalid else Ok n
