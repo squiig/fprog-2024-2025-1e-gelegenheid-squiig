@@ -26,3 +26,9 @@ let noBackwardSlashes invalid (s: string) =
   if s.Contains '\\' then Error invalid else Ok s
 
 let nonNegativeNumber invalid n = if n < 0 then Error invalid else Ok n
+
+let noSpaces invalid s =
+  if String.forall Char.IsWhiteSpace s then
+    Error invalid
+  else
+    Ok s
