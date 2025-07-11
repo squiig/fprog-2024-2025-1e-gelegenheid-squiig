@@ -96,13 +96,10 @@ module Entry =
   module Validation =
 
     let folderSizeIsZero invalid entry =
-      match entry.Kind with
-      | File -> Ok entry
-      | Folder ->
-        if entry.Size <> EntrySize.zero then
-          Error invalid
-        else
-          Ok entry
+      if entry.Kind = Folder && entry.Size <> EntrySize.zero then
+        Error invalid
+      else
+        Ok entry
 
     let rootFolderNameCorrect invalid entry =
       if entry.Kind = Folder && not <| hasParent entry && entry.Name <> EntryName.root then
