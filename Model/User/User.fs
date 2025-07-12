@@ -31,21 +31,22 @@ module UserName =
   let toRaw (UserName(name)) = name
 
 module UserQuota =
-  let minimum = 1024 * 1024
+  let min = 1024 * 1024 // 1 megabyte
+  let max = 2 <<< 30 // 1 gigabyte
 
   let ofRaw quota =
     quota
     |> Validation.nonNegativeNumber "User quota may not be a negative number."
     |> Result.bind (fun q ->
-      if q < minimum then
-        Error "User quota must be at least 1024 * 1024 (1 megabyte)."
+      if q <= min || q > max then
+        Error "User quota must be between 1024 * 1024 (1 megabyte) and 2^30 (1 gigabyte)."
       else
         Ok q)
     |> Result.map UserQuota
 
   let toRaw (UserQuota(quota)) = quota
 
-// must be the identifier of a folder with the name "files" that has no parent entry
+// TODO: Invariant that must be enforced by Application layer: Must be the identifier of a folder with the name "files" that has no parent entry
 module UserRoot =
   let ofRaw id =
     id |> EntryId.ofRaw |> Result.map UserRoot
@@ -61,11 +62,25 @@ module User =
         Quota: UserQuota
         RootFolder: UserRoot }
 
-  let toUser (id, username, quota, rootFolder) : User =
-    { Id = UserId id
-      Username = UserName username
-      Quota = UserQuota quota
-      RootFolder = UserRoot rootFolder }
+  let make (id, name, quota, rootFolder) : User =
+    { Id = id
+      Username = name
+      Quota = quota
+      RootFolder = rootFolder }
+
+  let ofRaw (id, name, quota, rootFolder) =
+    match
+      UserId.ofRaw id
+      |> Result.bind (fun userId ->
+        UserName.ofRaw name
+        |> Result.bind (fun userName ->
+          UserQuota.ofRaw quota
+          |> Result.bind (fun userQuota ->
+            UserRoot.ofRaw rootFolder
+            |> Result.map (fun userRoot -> (userId, userName, userQuota, userRoot)))))
+    with
+    | Ok u -> make u |> Ok
+    | Error e -> Error e
 
   let toTuple (user: User) =
     user.Id, user.Username, user.Quota, user.RootFolder
