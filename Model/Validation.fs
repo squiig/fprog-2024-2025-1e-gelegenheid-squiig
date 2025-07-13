@@ -32,3 +32,5 @@ let noSpaces invalid s =
     Error invalid
   else
     Ok s
+
+let notBelowOne invalid i = if i < 1 then Error invalid else Ok i

@@ -6,15 +6,14 @@ type UserQuota = private UserQuota of int
 type UserRoot = private UserRoot of EntryId
 
 module UserId =
+  let first = UserId 1
+
   let ofRaw id =
-    if id < 1 then
-      Error "User id may not be less than 1."
-    else
-      Ok <| UserId id
+    id
+    |> Validation.notBelowOne "User id may not be less than 1."
+    |> Result.map UserId
 
   let toRaw (UserId(id)) = id
-
-  let first = UserId 1
 
 module UserName =
   let ofRaw name =

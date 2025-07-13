@@ -14,19 +14,14 @@ type EntrySize = private EntrySize of int
 
 [<RequireQualifiedAccess>]
 module EntryId =
-  module Validation =
-    let notBelowOne invalid i = if i < 1 then Error invalid else Ok i
+  let first = EntryId 1
 
   let validate id =
-    Validation.notBelowOne "Entry id cannot be less than 1." id
-
-  let isValid id = validate id |> Result.isOk
+    id |> Validation.notBelowOne "Entry id cannot be less than 1."
 
   let ofRaw id = validate id |> Result.map EntryId
 
   let toRaw (EntryId(eid)) = eid
-
-  let first = EntryId 1
 
 [<RequireQualifiedAccess>]
 module EntryName =
