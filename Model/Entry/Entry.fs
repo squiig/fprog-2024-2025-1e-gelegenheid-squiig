@@ -94,8 +94,10 @@ module Entry =
 
   let hasParent entry = entry.Parent <> EntryParent.none
 
+  let isFolder entry = entry.Kind = Folder
+
   let isRootFolder entry =
-    entry.Name = EntryName.root && entry.Kind = Folder && not <| hasParent entry
+    entry.Name = EntryName.root && entry |> isFolder && not <| hasParent entry
 
   module Validation =
 

@@ -4,15 +4,18 @@ open DrizzleCarton.Model
 
 // TODO: make all these failure types exhaustive
 
-type DAGetAllEntriesFailure = | DataAccessFailed
+type DAGetAllEntriesFailure = DataAccessFailure of string
 
-type DAFindEntryByIdFailure = | DataAccessFailed
+type DAFindEntryByIdFailure = DataAccessFailure of string
 
-type DAStoreEntryFailure = | DataAccessFailed
+type DAStoreEntryFailure = DataAccessFailure of string
 
 type DAUpdateEntryFailure =
+  // it's exceptional if we're trying to update an Entry model that's not stored in persistence
   | UserDoesNotExist
-  | DataAccessFailed
+  | DataAccessFailure of string
+
+open Entry
 
 /// Defines data access operations for entry functionality.
 type IEntryDataAccess =
@@ -25,25 +28,55 @@ type IEntryDataAccess =
 module Entry =
 
   type StoreResult =
-    | Stored of Entry
-    | DataAccessFailed
+    | EntryStored of Entry
+    | DataAccessFailure of string
 
   let newRoot (dataAccess: IEntryDataAccess) =
     match dataAccess.StoreNewRootFolder() with
-    | Error DAStoreEntryFailure.DataAccessFailed -> DataAccessFailed
-    | Ok entry -> Stored entry
+    | Error(DAStoreEntryFailure.DataAccessFailure s) -> DataAccessFailure s
+    | Ok entry -> EntryStored entry
 
   type GetByIdResult =
-    | NotFound
-    | Found of Entry
-    | DataAccessFailed
+    | EntryFound of Entry
+    | EntryNotFound
+    | DataAccessFailure of string
 
   let findById (dataAccess: IEntryDataAccess) (id: EntryId) =
     match dataAccess.FindEntryById id with
-    | Error DAFindEntryByIdFailure.DataAccessFailed -> DataAccessFailed
-    | Ok(Some entry) -> Found entry
-    | Ok None -> NotFound
+    | Error(DAFindEntryByIdFailure.DataAccessFailure s) -> DataAccessFailure s
+    | Ok(Some entry) -> EntryFound entry
+    | Ok None -> EntryNotFound
 
   // TODO: fix this function
   let fetchSubentries (dataAccess: IEntryDataAccess) (id: int) =
-    Database.subEntries db id |> Result.defaultValue [] |> List.map Entry.toEntry
+    Database.subEntries db id |> Result.defaultValue [] |> List.map Entry.ofRaw
+
+  type GetParentResult =
+    | ParentFound of Entry
+    | NoParent
+    | NonexistentParent
+    | DataAccessFailure of string
+
+  let getParent (dataAccess: IEntryDataAccess) (entry: Entry) =
+    let _, _, parentId, _, _ = toTuple entry
+
+    match EntryParent.toRaw parentId with
+    | None -> NoParent
+    | Some id ->
+      match findById dataAccess id with
+      | GetByIdResult.DataAccessFailure s -> DataAccessFailure s
+      | EntryNotFound -> NonexistentParent
+      | EntryFound e -> ParentFound e
+
+  module Validation =
+    let nonFileParent (dataAccess: IEntryDataAccess) invalid parent =
+      if parent |> isFolder then Ok parent else Error invalid
+
+  let validate (dataAccess: IEntryDataAccess) (entry: Entry) : Result<Entry, string> =
+    match getParent dataAccess entry with
+    | DataAccessFailure s -> Error s
+    | NonexistentParent -> Error "Entry may not point to a parent that doesn't exist."
+    | NoParent -> Ok entry
+    | ParentFound parent ->
+      Validation.nonFileParent dataAccess "Entry parents must be folders." parent
+      |> Result.map (fun _ -> entry)
