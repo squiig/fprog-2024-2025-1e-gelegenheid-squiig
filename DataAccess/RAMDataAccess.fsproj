@@ -6,9 +6,14 @@
   </PropertyGroup>
 
   <ItemGroup>
+    <Compile Include="ResultHelper.fs" />
+    <Compile Include="RAMDataAccess.fs" />
     <Compile Include="Entry\Entry.fs" />
     <Compile Include="User\User.fs" />
-    <Compile Include="RAMDataAccess.fs" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <PackageReference Include="FsToolkit.ErrorHandling" Version="5.0.1" />
   </ItemGroup>
 
   <ItemGroup>

@@ -3,27 +3,32 @@ namespace DrizzleCarton.Application
 open DrizzleCarton.Model
 open DrizzleCarton.Model.Entry
 
-// TODO: make exhaustive?
-/// Any error that may come from the Data Access implementation when attempting to access Entries.
-type EntryDataAccessFailure = EntryDataAccessFailure of string
+/// Any error that may come from the data access implementation when attempting to read Entries.
+type ReadEntryFailure =
+  | ValidationError of string
+  | DataAccessError of string
 
-/// Defines data access operations for entry functionality.
+/// Any error that may come from the data access implementation when attempting to write Entries.
+type WriteEntryFailure = DataAccessError of string
+
+/// Defines the data operations for Entry functionality to be implemented by some data access dependency.
 type IEntryDataAccess =
-  abstract GetAllEntries: unit -> Result<Entry list, EntryDataAccessFailure>
-  abstract FindEntryById: EntryId -> Result<Entry option, EntryDataAccessFailure>
-  abstract StoreEntry: EntryName * EntryParent * EntryKind * EntrySize -> Result<Entry, EntryDataAccessFailure>
-  abstract StoreNewRootFolder: unit -> Result<Entry, EntryDataAccessFailure>
-  abstract UpdateEntry: Entry -> Result<Entry, EntryDataAccessFailure>
+  abstract GetAllEntries: unit -> Result<Entry list, ReadEntryFailure>
+  abstract GetSubEntries: EntryId -> Result<Entry list, ReadEntryFailure>
+  abstract FindEntryById: EntryId -> Result<Entry option, ReadEntryFailure>
+  abstract StoreEntry: EntryName * EntryParent * EntryKind * EntrySize -> Result<Entry, WriteEntryFailure>
+  abstract StoreNewRootFolder: unit -> Result<Entry, WriteEntryFailure>
+  abstract UpdateEntry: Entry -> Result<Entry, WriteEntryFailure>
 
 module Entry =
 
   type StoreResult =
     | EntryStored of Entry
-    | DataAccessFailure of string
+    | DataFailure of string
 
   let newRoot (dataAccess: IEntryDataAccess) =
     match dataAccess.StoreNewRootFolder() with
-    | Error(EntryDataAccessFailure s) -> DataAccessFailure s
+    | Error(WriteEntryFailure.DataAccessError s) -> DataFailure s
     | Ok entry -> EntryStored entry
 
   type GetByIdResult =
@@ -33,13 +38,24 @@ module Entry =
 
   let findById (dataAccess: IEntryDataAccess) (id: EntryId) =
     match dataAccess.FindEntryById id with
-    | Error(EntryDataAccessFailure s) -> DataAccessFailure s
+    | Error(ReadEntryFailure.DataAccessError s) -> DataAccessFailure s
+    | Error(ValidationError s) -> DataAccessFailure s
     | Ok(Some entry) -> EntryFound entry
     | Ok None -> EntryNotFound
 
-  // TODO: fix this function
-  let fetchSubentries (dataAccess: IEntryDataAccess) (id: int) =
-    Database.subEntries db id |> Result.defaultValue [] |> List.map Entry.ofRaw
+  type GetSubEntriesResult =
+    | SubEntriesFound of Entry list
+    | ZeroSubEntries
+    | DataAccessFailure of string
+
+  let findSubentries (dataAccess: IEntryDataAccess) (id: EntryId) : GetSubEntriesResult =
+    match dataAccess.GetSubEntries id with
+    | Error(ReadEntryFailure.DataAccessError s) -> DataAccessFailure s
+    | Error(ValidationError s) ->
+      DataAccessFailure
+        $"Illegal state: One or more of the sub-entries of entry with id %d{EntryId.toRaw id} could not be validated when read from storage! Message: '%s{s}'"
+    | Ok subEntries when subEntries.IsEmpty -> ZeroSubEntries
+    | Ok subEntries -> SubEntriesFound subEntries
 
   type GetParentResult =
     | ParentFound of Entry

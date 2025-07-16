@@ -8,6 +8,8 @@ type RAMDataAccess =
     { mutable Users: Map<int, UserTuple>
       mutable Entries: Map<int, EntryTuple> }
 
+type RAMDataAccessError = NotFound of int
+
 module RAMDataAccess =
   let connect () =
     let users =
@@ -46,8 +48,6 @@ module RAMDataAccess =
       RAMDataAccess.Entries = entries }
 
   let defaultDb = connect ()
-
-  type RAMDataAccessError = NotFound of int
 
 
   let user (id: int) (db: RAMDataAccess) : Result<UserTuple, RAMDataAccessError> =
