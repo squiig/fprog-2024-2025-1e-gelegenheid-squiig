@@ -1,14 +1,14 @@
-namespace DrizzleCarton.DataAccess
+namespace DrizzleCarton.RAMDataAccess
 
 type UserTuple = int * string * int * int
 type EntryTuple = int * string * Option<int> * string * int
 
-type SimulatedDatabase =
+type RAMDataAccess =
   private
     { mutable Users: Map<int, UserTuple>
       mutable Entries: Map<int, EntryTuple> }
 
-module SimulatedDatabase =
+module RAMDataAccess =
   let connect () =
     let users =
       [ 1, "janne", 1073741824, 1
@@ -42,21 +42,23 @@ module SimulatedDatabase =
       |> List.map (fun (id, name, parentId, kind, size) -> id, (id, name, parentId, kind, size))
       |> Map.ofList
 
-    { SimulatedDatabase.Users = users
-      SimulatedDatabase.Entries = entries }
+    { RAMDataAccess.Users = users
+      RAMDataAccess.Entries = entries }
 
-  type SimulatedDatabaseError = NotFound of int
+  let defaultDb = connect ()
+
+  type RAMDataAccessError = NotFound of int
 
 
-  let user (id: int) (db: SimulatedDatabase) : Result<UserTuple, SimulatedDatabaseError> =
+  let user (id: int) (db: RAMDataAccess) : Result<UserTuple, RAMDataAccessError> =
     match db.Users |> Map.tryFind id with
     | Some user -> Ok user
     | None -> Error(NotFound id)
 
   let addUser
-    (db: SimulatedDatabase)
+    (db: RAMDataAccess)
     (username: string, quota: int, rootFolder: int)
-    : Result<UserTuple, SimulatedDatabaseError> =
+    : Result<UserTuple, RAMDataAccessError> =
     let id =
       if Map.isEmpty db.Users then
         1
@@ -67,10 +69,10 @@ module SimulatedDatabase =
     db.Users <- Map.add id user db.Users
     Ok user
 
-  let users (db: SimulatedDatabase) : Result<UserTuple list, SimulatedDatabaseError> =
+  let users (db: RAMDataAccess) : Result<UserTuple list, RAMDataAccessError> =
     db.Users |> Map.values |> List.ofSeq |> Ok
 
-  let updateUser (db: SimulatedDatabase) (id, username, quota, rootFolder) : Result<UserTuple, SimulatedDatabaseError> =
+  let updateUser (db: RAMDataAccess) (id, username, quota, rootFolder) : Result<UserTuple, RAMDataAccessError> =
     match db.Users |> Map.tryFind id with
     | Some user ->
       let updatedUser = id, username, quota, rootFolder
@@ -78,17 +80,17 @@ module SimulatedDatabase =
       Ok updatedUser
     | None -> Error(NotFound id)
 
-  let entries (db: SimulatedDatabase) : Result<List<EntryTuple>, SimulatedDatabaseError> =
+  let entries (db: RAMDataAccess) : Result<List<EntryTuple>, RAMDataAccessError> =
     db.Entries |> Map.values |> List.ofSeq |> Ok
 
 
-  let entry (db: SimulatedDatabase) (id: int) =
+  let entry (db: RAMDataAccess) (id: int) =
     db.Entries
     |> Map.tryFind id
     |> Option.map Ok
     |> Option.defaultWith (fun _ -> Error(NotFound id))
 
-  let addEntry (db: SimulatedDatabase) (name, parent, kind, size) =
+  let addEntry (db: RAMDataAccess) (name, parent, kind, size) =
     let nextId =
       if Map.isEmpty db.Entries then
         1
@@ -101,7 +103,7 @@ module SimulatedDatabase =
 
 
 
-  let subEntries (db: SimulatedDatabase) (id: int) : Result<List<EntryTuple>, SimulatedDatabaseError> =
+  let subEntries (db: RAMDataAccess) (id: int) : Result<List<EntryTuple>, RAMDataAccessError> =
     db.Entries
     |> Map.filter (fun _ (_, _, parentId, _, _) -> parentId = Some id)
     |> Map.values
