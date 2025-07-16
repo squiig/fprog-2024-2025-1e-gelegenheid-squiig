@@ -1,4 +1,4 @@
-module DrizzleCarton.Service.User
+module DrizzleCarton.HTTPWebService.User
 
 open DrizzleCarton.Model
 open DrizzleCarton.Application

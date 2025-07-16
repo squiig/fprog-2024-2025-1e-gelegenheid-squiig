@@ -1,13 +1,12 @@
-namespace DrizzleCarton.Service
+module DrizzleCarton.HTTPWebService.Serialization
 
 open Giraffe
 
 open Thoth.Json.Net
 
-module Serialization =
-  /// convert to Json
-  let json<'T> (x: 'T) : HttpHandler =
-    let encoded = Encode.Auto.toString (4, x)
-    setHttpHeader "Content-Type" "application/json" >=> setBodyFromString encoded
+/// convert to Json
+let json<'T> (x: 'T) : HttpHandler =
+  let encoded = Encode.Auto.toString (4, x)
+  setHttpHeader "Content-Type" "application/json" >=> setBodyFromString encoded
 
-  let fromJson<'T> = Decode.Auto.fromString<'T>
+let fromJson<'T> = Decode.Auto.fromString<'T>
