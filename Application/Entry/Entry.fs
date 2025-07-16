@@ -1,29 +1,19 @@
 namespace DrizzleCarton.Application
 
 open DrizzleCarton.Model
+open DrizzleCarton.Model.Entry
 
-// TODO: make all these failure types exhaustive
-
-type DAGetAllEntriesFailure = DataAccessFailure of string
-
-type DAFindEntryByIdFailure = DataAccessFailure of string
-
-type DAStoreEntryFailure = DataAccessFailure of string
-
-type DAUpdateEntryFailure =
-  // it's exceptional if we're trying to update an Entry model that's not stored in persistence
-  | UserDoesNotExist
-  | DataAccessFailure of string
-
-open Entry
+// TODO: make exhaustive?
+/// Any error that may come from the Data Access implementation when attempting to access Entries.
+type EntryDataAccessFailure = EntryDataAccessFailure of string
 
 /// Defines data access operations for entry functionality.
 type IEntryDataAccess =
-  abstract GetAllEntries: unit -> Result<Entry list, DAGetAllEntriesFailure>
-  abstract FindEntryById: EntryId -> Result<Entry option, DAFindEntryByIdFailure>
-  abstract StoreEntry: EntryName * EntryParent * EntryKind * EntrySize -> Result<Entry, DAStoreEntryFailure>
-  abstract StoreNewRootFolder: unit -> Result<Entry, DAStoreEntryFailure>
-  abstract UpdateEntry: Entry -> Result<Entry, DAUpdateEntryFailure>
+  abstract GetAllEntries: unit -> Result<Entry list, EntryDataAccessFailure>
+  abstract FindEntryById: EntryId -> Result<Entry option, EntryDataAccessFailure>
+  abstract StoreEntry: EntryName * EntryParent * EntryKind * EntrySize -> Result<Entry, EntryDataAccessFailure>
+  abstract StoreNewRootFolder: unit -> Result<Entry, EntryDataAccessFailure>
+  abstract UpdateEntry: Entry -> Result<Entry, EntryDataAccessFailure>
 
 module Entry =
 
@@ -33,7 +23,7 @@ module Entry =
 
   let newRoot (dataAccess: IEntryDataAccess) =
     match dataAccess.StoreNewRootFolder() with
-    | Error(DAStoreEntryFailure.DataAccessFailure s) -> DataAccessFailure s
+    | Error(EntryDataAccessFailure s) -> DataAccessFailure s
     | Ok entry -> EntryStored entry
 
   type GetByIdResult =
@@ -43,7 +33,7 @@ module Entry =
 
   let findById (dataAccess: IEntryDataAccess) (id: EntryId) =
     match dataAccess.FindEntryById id with
-    | Error(DAFindEntryByIdFailure.DataAccessFailure s) -> DataAccessFailure s
+    | Error(EntryDataAccessFailure s) -> DataAccessFailure s
     | Ok(Some entry) -> EntryFound entry
     | Ok None -> EntryNotFound
 
