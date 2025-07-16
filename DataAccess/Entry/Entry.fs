@@ -1,25 +1,26 @@
-module DrizzleCarton.DataAccess.Entry
+module DrizzleCarton.RAMDataAccess.Entry
 
 open DrizzleCarton.Application
 open DrizzleCarton.Model
+open DrizzleCarton.Model.Entry
 
 let entryPersistence: IEntryDataAccess =
   { new IEntryDataAccess with
-      member this.FindEntryById(arg1: EntryId) : Result<Entry option, DAFindEntryByIdFailure> =
+      member this.FindEntryById(id: EntryId) : Result<Entry option, EntryDataAccessFailure> =
         raise (System.NotImplementedException())
 
-      member this.GetAllEntries() : Result<Entry list, DAGetAllEntriesFailure> =
+      member this.GetAllEntries() : Result<Entry list, EntryDataAccessFailure> =
         raise (System.NotImplementedException())
 
       member this.StoreEntry
-        (arg1: EntryName, arg2: EntryParent, arg3: EntryKind, arg4: EntrySize)
-        : Result<Entry, DAStoreEntryFailure> =
+        (name: EntryName, parent: EntryParent, kind: EntryKind, size: EntrySize)
+        : Result<Entry, EntryDataAccessFailure> =
         raise (System.NotImplementedException())
 
-      member this.StoreNewRootFolder() : Result<Entry, DAStoreEntryFailure> =
+      member this.StoreNewRootFolder() : Result<Entry, EntryDataAccessFailure> =
         raise (System.NotImplementedException())
 
-      member this.UpdateEntry(arg1: Entry) : Result<Entry, DAUpdateEntryFailure> =
+      member this.UpdateEntry(entry: Entry) : Result<Entry, EntryDataAccessFailure> =
         raise (System.NotImplementedException())
 
   }

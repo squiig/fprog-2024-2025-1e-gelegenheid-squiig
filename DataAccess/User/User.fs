@@ -1,4 +1,4 @@
-module DrizzleCarton.DataAccess.User
+module DrizzleCarton.RAMDataAccess.User
 
 open DrizzleCarton.Application
 open DrizzleCarton.Model
