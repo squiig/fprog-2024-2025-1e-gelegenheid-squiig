@@ -8,7 +8,7 @@
   <ItemGroup>
     <Compile Include="Entry\Entry.fs" />
     <Compile Include="User\User.fs" />
-    <Compile Include="SimulatedDatabase.fs" />
+    <Compile Include="RAMDataAccess.fs" />
   </ItemGroup>
 
   <ItemGroup>
