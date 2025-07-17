@@ -4,6 +4,8 @@ module DrizzleCarton.Model.Validation
 open System
 open System.Text.RegularExpressions
 
+type ValidationError = ValidationError of string
+
 /// Validate that the given string is not empty or indicate that the value is invalid by returning the provided value.
 let nonEmpty invalid s =
   if String.IsNullOrWhiteSpace s then Error invalid else Ok s

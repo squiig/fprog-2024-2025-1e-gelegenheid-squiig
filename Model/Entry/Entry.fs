@@ -16,8 +16,12 @@ type EntrySize = private EntrySize of int
 module EntryId =
   let first = EntryId 1
 
+  open Validation
+
   let validate id =
-    id |> Validation.notBelowOne "Entry id cannot be less than 1."
+    id
+    |> notBelowOne "Entry id cannot be less than 1."
+    |> Result.mapError ValidationError
 
   let ofRaw id = validate id |> Result.map EntryId
 
@@ -25,17 +29,20 @@ module EntryId =
 
 [<RequireQualifiedAccess>]
 module EntryName =
+  open Validation
+
   let ofRaw (name: string) =
     name
-    |> Validation.nonEmpty "Entry name may not be empty."
+    |> nonEmpty "Entry name may not be empty."
     |> Result.bind (fun n ->
       if n.Length > 64 then
         Error "Entry name may not be longer than 64 characters."
       else
         Ok n)
-    |> Result.bind (Validation.noForwardSlashes "Entry name may not contain forward slashes.")
-    |> Result.bind (Validation.noBackwardSlashes "Entry name may not contain backward slashes.")
+    |> Result.bind (noForwardSlashes "Entry name may not contain forward slashes.")
+    |> Result.bind (noBackwardSlashes "Entry name may not contain backward slashes.")
     |> Result.map EntryName
+    |> Result.mapError ValidationError
 
   let toRaw (EntryName(name)) = name
 
@@ -45,7 +52,7 @@ module EntryName =
 module EntryParent =
   let none = EntryParent None
 
-  let ofRaw (parent: int option) : Result<EntryParent, string> =
+  let ofRaw (parent: int option) =
     match parent with
     | Some id ->
       match EntryId.ofRaw id with
@@ -57,14 +64,17 @@ module EntryParent =
 
 [<RequireQualifiedAccess>]
 module EntryKind =
+  open Validation
+
   let ofRaw kind =
     kind
-    |> Validation.nonEmpty "Entry kind may not be empty."
+    |> nonEmpty "Entry kind may not be empty."
     |> Result.bind (fun k ->
       match k with
       | "folder" -> Ok Folder
       | "file" -> Ok File
       | _ -> Error "Entry kind must be either 'file' or 'folder'.")
+    |> Result.mapError ValidationError
 
   let toRaw kind =
     match kind with
@@ -73,14 +83,17 @@ module EntryKind =
 
 [<RequireQualifiedAccess>]
 module EntrySize =
+  let zero = EntrySize 0
+
+  open Validation
+
   let ofRaw size =
     size
-    |> Validation.nonNegativeNumber "Entry size may not be less than zero."
+    |> nonNegativeNumber "Entry size may not be less than zero."
     |> Result.map EntrySize
+    |> Result.mapError ValidationError
 
   let toRaw (EntrySize(size)) = size
-
-  let zero = EntrySize 0
 
 module Entry =
 
@@ -125,6 +138,8 @@ module Entry =
       else
         Ok entry
 
+  open Validation
+
   let make (id, name, parent, kind, size) =
     { Id = id
       Name = name
@@ -135,6 +150,7 @@ module Entry =
     |> Result.bind (Validation.rootFolderNameCorrect "A folder without a parent must be named 'files'.")
     |> Result.bind (Validation.noParentOfRootFolder "Root folders may not have a parent.")
     |> Result.bind (Validation.nonRootEntryHasParent "Non-root entries must have a parent.")
+    |> Result.mapError ValidationError
 
   let ofRaw (id, name, parent, kind, size) =
     match

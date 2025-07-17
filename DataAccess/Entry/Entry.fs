@@ -1,10 +1,10 @@
 module DrizzleCarton.RAMDataAccess.Entry
 
-open DrizzleCarton.ResultHelper
 open DrizzleCarton.Application
 open DrizzleCarton.Model
 open DrizzleCarton.Model.Entry
 open DrizzleCarton.RAMDataAccess
+open DrizzleCarton.ResultHelper
 
 let entryPersistence: IEntryDataAccess =
   { new IEntryDataAccess with
@@ -18,7 +18,8 @@ let entryPersistence: IEntryDataAccess =
           entries
           |> List.map Entry.ofRaw
           |> sequenceResult
-          |> Result.mapError ValidationError
+          |> Result.mapError (function
+            | Validation.ValidationError e -> ValidationError e)
 
       member this.FindEntryById(id: EntryId) : Result<Entry option, ReadEntryFailure> =
         raise (System.NotImplementedException())
