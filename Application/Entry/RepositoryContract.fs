@@ -5,7 +5,7 @@ open DrizzleCarton.Model.Entry
 
 /// Any error that may come from the data access implementation when attempting to read Entries.
 type ReadEntryFailure =
-  | ValidationError of string
+  | ModelValidationError of string
   | DataAccessError of string
 
 /// Any error that may come from the data access implementation when attempting to write Entries.

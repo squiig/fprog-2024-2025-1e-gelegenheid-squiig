@@ -23,7 +23,7 @@ module Entry =
   let findById (dataAccess: IEntryDataAccess) (id: EntryId) =
     match dataAccess.FindEntryById id with
     | Error(ReadEntryFailure.DataAccessError s) -> DataFailure s
-    | Error(ValidationError s) ->
+    | Error(ModelValidationError s) ->
       DataFailure
         $"Illegal state: Entry with id %d{EntryId.toRaw id} could not be validated when read from storage! Message: '%s{s}'"
     | Ok(Some entry) -> EntryFound entry
@@ -37,7 +37,7 @@ module Entry =
   let getSubentries (dataAccess: IEntryDataAccess) (id: EntryId) : GetSubEntriesResult =
     match dataAccess.GetSubEntries id with
     | Error(ReadEntryFailure.DataAccessError s) -> DataFailure s
-    | Error(ValidationError s) ->
+    | Error(ModelValidationError s) ->
       DataFailure
         $"Illegal state: One or more of the sub-entries of entry with id %d{EntryId.toRaw id} could not be validated when read from storage! Message: '%s{s}'"
     | Ok subEntries when subEntries.IsEmpty -> ZeroSubEntries
