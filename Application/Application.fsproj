@@ -6,7 +6,8 @@
   </PropertyGroup>
 
   <ItemGroup>
-    <Compile Include="Util.fs" />
+    <Compile Include="Common.fs" />
+    <Compile Include="Entry\RepositoryContract.fs" />
     <Compile Include="Entry\Entry.fs" />
     <Compile Include="User\User.fs" />
   </ItemGroup>
