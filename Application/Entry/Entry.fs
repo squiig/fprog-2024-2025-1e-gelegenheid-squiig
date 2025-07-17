@@ -111,4 +111,4 @@ module Entry =
           $"Entry may not have more than %d{Validation.maxLegalAncestors} ancestors."
           (Validation.maxLegalAncestors - 1)
       )
-      |> Result.map (fun _ -> entry)
+      |> Result.map (fun _ -> entry) // Return the entry, not the parent.
