@@ -9,7 +9,9 @@
     <Compile Include="Common.fs" />
     <Compile Include="Entry\RepositoryContract.fs" />
     <Compile Include="Entry\Entry.fs" />
+    <Compile Include="User\RepositoryContract.fs" />
     <Compile Include="User\User.fs" />
+    <Compile Include="CrossValidation.fs" />
   </ItemGroup>
 
   <ItemGroup>

@@ -7,8 +7,8 @@ open DrizzleCarton.Model.Entry
 open DrizzleCarton.RAMDataAccess
 open DrizzleCarton.ResultHelper
 
-let entryPersistence: IEntryDataAccess =
-  { new IEntryDataAccess with
+let entryPersistence: IEntryRepository =
+  { new IEntryRepository with
       member this.GetSubEntries(id: EntryId) : Result<Entry list, ReadEntryFailure> =
         let rawId = EntryId.toRaw id
 

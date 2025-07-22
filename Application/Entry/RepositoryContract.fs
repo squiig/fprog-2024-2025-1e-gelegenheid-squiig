@@ -12,7 +12,7 @@ type ReadEntryFailure =
 type WriteEntryFailure = DataAccessError of string
 
 /// Defines the data operations for Entry functionality to be implemented by some data access dependency.
-type IEntryDataAccess =
+type IEntryRepository =
   abstract GetAllEntries: unit -> Result<Entry list, ReadEntryFailure>
   abstract GetSubEntries: EntryId -> Result<Entry list, ReadEntryFailure>
   abstract FindEntryById: EntryId -> Result<Entry option, ReadEntryFailure>

@@ -1,4 +1,4 @@
-module DrizzleCarton.Application.Util
+module DrizzleCarton.Application.Common
 
 type ValidationError = ValidationError of string
 
