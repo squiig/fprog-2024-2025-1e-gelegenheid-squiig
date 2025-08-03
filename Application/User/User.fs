@@ -43,7 +43,7 @@ module Validation =
     | Entry.EntryFound e -> if Entry.isRootFolder e then Ok user else Error invalid
     |> Result.mapError ValidationError
 
-let validate (entryRepo: IEntryRepository) user =
-  user
-  |> Validation.validUserRoot entryRepo "Users must have a valid root folder."
-  |> Result.map (fun _ -> user) // Whatever previous validations returned, return the input user if all succeeded
+  let validate (entryRepo: IEntryRepository) user =
+    user
+    |> validUserRoot entryRepo "Users must have a valid root folder."
+    |> Result.map (fun _ -> user) // Whatever previous validations returned, return the input user if all succeeded
