@@ -37,12 +37,6 @@ let update (userRepo: IUserRepository) id user =
   Database.updateUser db (toTuple user) |> Result.map toUser
 
 module Validation =
-  let notOverQuota invalid user =
-    let _, _, quota, _ = User.toTuple user
-    // looks like this is gonna be cross validation too...
-    failwith "todo"
-
-  // A user must have a root folder associated with their account REMOVE THIS COMMENT
   let validUserRoot entryRepo invalid user =
     let _, _, _, root = User.toTuple user
     let rootId = UserRoot.toRaw root
@@ -53,7 +47,7 @@ module Validation =
     | Entry.EntryFound e -> if Entry.isRootFolder e then Ok user else Error invalid
     |> Result.mapError ValidationError
 
-let validate (userRepo: IUserRepository) (entryRepo: IEntryRepository) user =
+let validate (entryRepo: IEntryRepository) user =
   user
   |> Validation.validUserRoot entryRepo "Users must have a valid root folder."
-  |> Result.map (fun _ -> user)
+  |> Result.map (fun _ -> user) // Whatever previous validations returned, return the input user if all succeeded
