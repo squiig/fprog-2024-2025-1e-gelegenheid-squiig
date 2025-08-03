@@ -28,13 +28,9 @@ let findById (userRepo: IUserRepository) (id: UserId) =
   | Ok None -> NotFound
   | Ok(Some user) -> Found user
 
-// TODO: fix function
-let add (userRepo: IUserRepository) username quota rootFolder =
-  Database.addUser db (username, quota, rootFolder) |> Result.map toUser
+let add (userRepo: IUserRepository) user = userRepo.StoreUser user
 
-// TODO: fix function
-let update (userRepo: IUserRepository) id user =
-  Database.updateUser db (toTuple user) |> Result.map toUser
+let update (userRepo: IUserRepository) user = userRepo.UpdateUser user
 
 module Validation =
   let validUserRoot entryRepo invalid user =
