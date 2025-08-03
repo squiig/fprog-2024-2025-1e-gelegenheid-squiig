@@ -8,24 +8,32 @@ type UserRoot = private UserRoot of EntryId
 module UserId =
   let first = UserId 1
 
-  let ofRaw id =
+  open Validation
+
+  let validate id =
     id
-    |> Validation.notBelowOne "User id may not be less than 1."
-    |> Result.map UserId
+    |> notBelowOne "User id may not be less than 1."
+    |> Result.mapError ValidationError
+
+  let ofRaw id = validate id |> Result.map UserId
 
   let toRaw (UserId(id)) = id
 
 module UserName =
-  let ofRaw name =
+  open Validation
+
+  let validate name =
     name
-    |> Validation.nonEmpty "User name may not be empty"
-    |> Result.bind (Validation.noSpaces "User name may not contain spaces.")
+    |> nonEmpty "User name may not be empty"
+    |> Result.bind (noSpaces "User name may not contain spaces.")
     |> Result.bind (fun n ->
       if n.Contains "drizzle" || n.Contains "carton" then
         Error "User name may not contain the words 'drizzle' or 'carton'."
       else
         Ok n)
-    |> Result.map UserName
+    |> Result.mapError ValidationError
+
+  let ofRaw name = validate name |> Result.map UserName
 
   let toRaw (UserName(name)) = name
 
@@ -33,22 +41,25 @@ module UserQuota =
   let min = 1024 * 1024 // 1 megabyte
   let max = 2 <<< 30 // 1 gigabyte
 
-  let ofRaw quota =
+  open Validation
+
+  let validate quota =
     quota
-    |> Validation.nonNegativeNumber "User quota may not be a negative number."
+    |> nonNegativeNumber "User quota may not be a negative number."
     |> Result.bind (fun q ->
       if q <= min || q > max then
         Error "User quota must be between 1024 * 1024 (1 megabyte) and 2^30 (1 gigabyte)."
       else
         Ok q)
-    |> Result.map UserQuota
+    |> Result.mapError ValidationError
+
+  let ofRaw quota = validate quota |> Result.map UserQuota
 
   let toRaw (UserQuota(quota)) = quota
 
 // TODO: Invariant that must be enforced by Application layer: Must be the identifier of a folder with the name "files" that has no parent entry
 module UserRoot =
-  let ofRaw id =
-    id |> EntryId.ofRaw |> Result.map UserRoot
+  let ofRaw id = UserRoot id |> Ok
 
   let toRaw (UserRoot(id)) = id
 
@@ -61,25 +72,23 @@ module User =
         Quota: UserQuota
         RootFolder: UserRoot }
 
-  let make (id, name, quota, rootFolder) : User =
+  let make (id, name, quota, rootFolder) =
     { Id = id
       Username = name
       Quota = quota
       RootFolder = rootFolder }
+    |> Ok
 
   let ofRaw (id, name, quota, rootFolder) =
-    match
-      UserId.ofRaw id
-      |> Result.bind (fun userId ->
-        UserName.ofRaw name
-        |> Result.bind (fun userName ->
-          UserQuota.ofRaw quota
-          |> Result.bind (fun userQuota ->
-            UserRoot.ofRaw rootFolder
-            |> Result.map (fun userRoot -> (userId, userName, userQuota, userRoot)))))
-    with
-    | Ok u -> make u |> Ok
-    | Error e -> Error e
+    UserId.ofRaw id
+    |> Result.bind (fun userId ->
+      UserName.ofRaw name
+      |> Result.bind (fun userName ->
+        UserQuota.ofRaw quota
+        |> Result.bind (fun userQuota ->
+          UserRoot.ofRaw rootFolder
+          |> Result.map (fun userRoot -> (userId, userName, userQuota, userRoot)))))
+    |> Result.bind make
 
   let toTuple (user: User) =
     user.Id, user.Username, user.Quota, user.RootFolder

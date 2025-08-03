@@ -96,19 +96,22 @@ module Validation =
     | AncestorCount c when c > maxAncestorCount -> Error invalid
     | AncestorCount _ -> Ok entry
 
-let validate (entryRepo: IEntryRepository) (entry: Entry) : Result<Entry, ValidationError> =
-  (match getParent entryRepo entry with
-   | GetParentResult.DataFailure s -> Error s
-   | NonexistentParent _ -> Error "Entry may not point to a parent that doesn't exist."
-   | NoParent -> Ok entry
-   | ParentFound parent ->
-     // Now the parent validations.
-     Validation.nonFile "Entry parents must be folders." parent
-     |> Result.bind (
-       Validation.legalAncestorCount
-         entryRepo
-         $"Entry may not have more than %d{Validation.maxLegalAncestors} ancestors."
-         (Validation.maxLegalAncestors - 1)
-     )
-     |> Result.map (fun _ -> entry)) // Return the entry, not the parent.
-  |> Result.mapError ValidationError
+  let validateAncestors (entryRepo: IEntryRepository) (entry: Entry) : Result<Entry, ValidationError> =
+    (match getParent entryRepo entry with
+     | GetParentResult.DataFailure s -> Error s
+     | NonexistentParent _ -> Error "Entry may not point to a parent that doesn't exist."
+     | NoParent -> Ok entry
+     | ParentFound parent ->
+       // Now the parent validations.
+       nonFile "Entry parents must be folders." parent
+       |> Result.bind (
+         legalAncestorCount
+           entryRepo
+           $"Entry may not have more than %d{maxLegalAncestors} ancestors."
+           (maxLegalAncestors - 1)
+       )
+       |> Result.map (fun _ -> entry)) // Return the entry, not the parent.
+    |> Result.mapError ValidationError
+
+  let validate (entryRepo: IEntryRepository) (entry: Entry) : Result<Entry, ValidationError> =
+    entry |> validateAncestors entryRepo |> Result.map (fun _ -> entry) // Make sure to always return the original entry on successful validation

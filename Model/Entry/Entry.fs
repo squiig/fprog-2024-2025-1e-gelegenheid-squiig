@@ -29,6 +29,8 @@ module EntryId =
 
 [<RequireQualifiedAccess>]
 module EntryName =
+  let root = EntryName "files"
+
   open Validation
 
   let ofRaw (name: string) =
@@ -45,8 +47,6 @@ module EntryName =
     |> Result.mapError ValidationError
 
   let toRaw (EntryName(name)) = name
-
-  let root = EntryName "files"
 
 [<RequireQualifiedAccess>]
 module EntryParent =
@@ -109,25 +109,27 @@ module Entry =
 
   let isFolder entry = entry.Kind = Folder
 
+  let isSizeZero entry = entry.Size = EntrySize.zero
+
   let isRootFolder entry =
-    entry.Name = EntryName.root && entry |> isFolder && not <| hasParent entry
+    entry |> isFolder && not (entry |> hasParent)
 
   module Validation =
 
     let folderSizeIsZero invalid entry =
-      if entry.Kind = Folder && entry.Size <> EntrySize.zero then
+      if entry |> isFolder && not (entry |> isSizeZero) then
         Error invalid
       else
         Ok entry
 
-    let rootFolderNameCorrect invalid entry =
-      if entry.Kind = Folder && not <| hasParent entry && entry.Name <> EntryName.root then
+    let folderWithoutParentHasRootName invalid entry =
+      if entry |> isFolder && not (entry |> hasParent) && entry.Name <> EntryName.root then
         Error invalid
       else
         Ok entry
 
     let noParentOfRootFolder invalid entry =
-      if hasParent entry && entry.Kind = Folder && entry.Name = EntryName.root then
+      if hasParent entry && entry |> isFolder && entry.Name = EntryName.root then
         Error invalid
       else
         Ok entry
@@ -138,8 +140,6 @@ module Entry =
       else
         Ok entry
 
-  open Validation
-
   let make (id, name, parent, kind, size) =
     { Id = id
       Name = name
@@ -147,26 +147,23 @@ module Entry =
       Kind = kind
       Size = size }
     |> Validation.folderSizeIsZero "Folders must have a size of zero."
-    |> Result.bind (Validation.rootFolderNameCorrect "A folder without a parent must be named 'files'.")
+    |> Result.bind (Validation.folderWithoutParentHasRootName "A folder without a parent must be named 'files'.")
     |> Result.bind (Validation.noParentOfRootFolder "Root folders may not have a parent.")
     |> Result.bind (Validation.nonRootEntryHasParent "Non-root entries must have a parent.")
-    |> Result.mapError ValidationError
+    |> Result.mapError Validation.ValidationError
 
   let ofRaw (id, name, parent, kind, size) =
-    match
-      EntryId.ofRaw id
-      |> Result.bind (fun entryId ->
-        EntryName.ofRaw name
-        |> Result.bind (fun entryName ->
-          EntryParent.ofRaw parent
-          |> Result.bind (fun entryParent ->
-            EntryKind.ofRaw kind
-            |> Result.bind (fun entryKind ->
-              EntrySize.ofRaw size
-              |> Result.map (fun entrySize -> (entryId, entryName, entryParent, entryKind, entrySize))))))
-    with
-    | Ok u -> make u |> Result.bind Ok
-    | Error e -> Error e
+    EntryId.ofRaw id
+    |> Result.bind (fun entryId ->
+      EntryName.ofRaw name
+      |> Result.bind (fun entryName ->
+        EntryParent.ofRaw parent
+        |> Result.bind (fun entryParent ->
+          EntryKind.ofRaw kind
+          |> Result.bind (fun entryKind ->
+            EntrySize.ofRaw size
+            |> Result.map (fun entrySize -> (entryId, entryName, entryParent, entryKind, entrySize))))))
+    |> Result.bind make
 
   let toTuple (entry: Entry) =
     entry.Id, entry.Name, entry.Parent, entry.Kind, entry.Size

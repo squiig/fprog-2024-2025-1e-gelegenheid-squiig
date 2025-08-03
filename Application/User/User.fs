@@ -4,6 +4,7 @@ open DrizzleCarton.Model
 open DrizzleCarton.Model.User
 open DrizzleCarton.Application.Common
 open DrizzleCarton.Application.UserRepositoryContract
+open DrizzleCarton.Application.EntryRepositoryContract
 
 type GetAllResult =
   | DataFailure of string
@@ -41,4 +42,18 @@ module Validation =
     // looks like this is gonna be cross validation too...
     failwith "todo"
 
-let validate (userRepo: IUserRepository) user = failwith "todo"
+  // A user must have a root folder associated with their account REMOVE THIS COMMENT
+  let validUserRoot entryRepo invalid user =
+    let _, _, _, root = User.toTuple user
+    let rootId = UserRoot.toRaw root
+
+    match Entry.findById entryRepo rootId with
+    | Entry.FindByIdResult.DataFailure s -> Error s
+    | Entry.EntryNotFound -> Error invalid
+    | Entry.EntryFound e -> if Entry.isRootFolder e then Ok user else Error invalid
+    |> Result.mapError ValidationError
+
+let validate (userRepo: IUserRepository) (entryRepo: IEntryRepository) user =
+  user
+  |> Validation.validUserRoot entryRepo "Users must have a valid root folder."
+  |> Result.map (fun _ -> user)
