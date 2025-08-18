@@ -48,9 +48,9 @@ type GetParentResult =
   | DataFailure of string
 
 let getParent (entryRepo: IEntryRepository) (entry: Entry) =
-  let _, _, parentId, _, _ = Entry.toTuple entry
+  let _, _, parent, _, _ = Entry.toTuple entry
 
-  match EntryParent.toRaw parentId with
+  match EntryParent.toRaw parent with
   | None -> NoParent
   | Some id ->
     match findById entryRepo id with
