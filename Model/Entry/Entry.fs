@@ -66,10 +66,7 @@ module EntryParent =
       | Ok entryId -> Some entryId |> EntryParent |> Ok
     | None -> Ok none
 
-  let toRaw (EntryParent(parent)) =
-    match parent with
-    | None -> None
-    | Some eid -> EntryId.toRaw eid |> Some
+  let toRaw (EntryParent(parent)) = parent
 
 [<RequireQualifiedAccess>]
 module EntryKind =
@@ -173,6 +170,6 @@ module Entry =
   let toRawTuple entry =
     EntryId.toRaw entry.Id,
     EntryName.toRaw entry.Name,
-    EntryParent.toRaw entry.Parent,
+    EntryParent.toRaw entry.Parent |> Option.map EntryId.toRaw,
     EntryKind.toRaw entry.Kind,
     EntrySize.toRaw entry.Size
