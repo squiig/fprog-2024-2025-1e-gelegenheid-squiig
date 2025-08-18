@@ -1,7 +1,6 @@
 module DrizzleCarton.Application.UserRepositoryContract
 
 open DrizzleCarton.Model
-open DrizzleCarton.Model.User
 
 /// Any error that may come from the data access implementation when attempting to read Users.
 type ReadUserFailure =

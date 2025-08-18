@@ -1,7 +1,6 @@
 module DrizzleCarton.Application.EntryRepositoryContract
 
 open DrizzleCarton.Model
-open DrizzleCarton.Model.Entry
 
 /// Any error that may come from the data access implementation when attempting to read Entries.
 type ReadEntryFailure =

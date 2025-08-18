@@ -1,7 +1,6 @@
 module DrizzleCarton.Application.Entry
 
 open DrizzleCarton.Model
-open DrizzleCarton.Model.Entry
 open DrizzleCarton.Application.Common
 open DrizzleCarton.Application.EntryRepositoryContract
 
@@ -33,7 +32,7 @@ type GetSubEntriesResult =
   | ZeroSubEntries
   | DataFailure of string
 
-let getSubentries (entryRepo: IEntryRepository) (id: EntryId) : GetSubEntriesResult =
+let getSubEntries (entryRepo: IEntryRepository) (id: EntryId) : GetSubEntriesResult =
   match entryRepo.GetSubEntries id with
   | Error(ReadEntryFailure.DataAccessError s) -> DataFailure s
   | Error(ModelValidationError s) ->
@@ -49,7 +48,7 @@ type GetParentResult =
   | DataFailure of string
 
 let getParent (entryRepo: IEntryRepository) (entry: Entry) =
-  let _, _, parentId, _, _ = toTuple entry
+  let _, _, parentId, _, _ = Entry.toTuple entry
 
   match EntryParent.toRaw parentId with
   | None -> NoParent
@@ -85,7 +84,7 @@ module Validation =
   let maxLegalAncestors = 6
 
   let nonFile invalid entry =
-    if entry |> isFolder then Ok entry else Error invalid
+    if entry |> Entry.isFolder then Ok entry else Error invalid
 
   let legalAncestorCount (entryRepo: IEntryRepository) invalid (maxAncestorCount: int) entry =
     match countAncestors entryRepo entry with

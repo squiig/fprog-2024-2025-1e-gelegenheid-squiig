@@ -5,6 +5,14 @@ type UserName = private UserName of string
 type UserQuota = private UserQuota of int
 type UserRoot = private UserRoot of EntryId
 
+type User =
+  private
+    { Id: UserId
+      Username: UserName
+      Quota: UserQuota
+      RootFolder: UserRoot }
+
+[<RequireQualifiedAccess>]
 module UserId =
   let first = UserId 1
 
@@ -19,6 +27,7 @@ module UserId =
 
   let toRaw (UserId(id)) = id
 
+[<RequireQualifiedAccess>]
 module UserName =
   open Validation
 
@@ -37,6 +46,7 @@ module UserName =
 
   let toRaw (UserName(name)) = name
 
+[<RequireQualifiedAccess>]
 module UserQuota =
   let min = 1024 * 1024 // 1 megabyte
   let max = 2 <<< 30 // 1 gigabyte
@@ -58,19 +68,14 @@ module UserQuota =
   let toRaw (UserQuota(quota)) = quota
 
 // TODO: Invariant that must be enforced by Application layer: Must be the identifier of a folder with the name "files" that has no parent entry
+[<RequireQualifiedAccess>]
 module UserRoot =
   let ofRaw id = UserRoot id |> Ok
 
   let toRaw (UserRoot(id)) = id
 
+[<RequireQualifiedAccess>]
 module User =
-
-  type User =
-    private
-      { Id: UserId
-        Username: UserName
-        Quota: UserQuota
-        RootFolder: UserRoot }
 
   let make (id, name, quota, rootFolder) =
     { Id = id

@@ -1,7 +1,6 @@
 module DrizzleCarton.Application.User
 
 open DrizzleCarton.Model
-open DrizzleCarton.Model.User
 open DrizzleCarton.Application.Common
 open DrizzleCarton.Application.UserRepositoryContract
 open DrizzleCarton.Application.EntryRepositoryContract
