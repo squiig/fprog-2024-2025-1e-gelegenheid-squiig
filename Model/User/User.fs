@@ -1,5 +1,7 @@
 namespace DrizzleCarton.Model
 
+open Validation
+
 type UserName = private UserName of string
 type UserQuota = private UserQuota of int
 type UserRoot = private UserRoot of EntryId
@@ -18,8 +20,6 @@ type User = private { Id: UserId; Data: UserData }
 module UserId =
   let first = UserId 1
 
-  open Validation
-
   let validate id =
     id
     |> notBelowOne "User id may not be less than 1."
@@ -31,7 +31,6 @@ module UserId =
 
 [<RequireQualifiedAccess>]
 module UserName =
-  open Validation
 
   let validate name =
     name
@@ -52,8 +51,6 @@ module UserName =
 module UserQuota =
   let min = 1024 * 1024 // 1 megabyte
   let max = 2 <<< 30 // 1 gigabyte
-
-  open Validation
 
   let validate quota =
     quota
@@ -78,7 +75,6 @@ module UserRoot =
 
 [<RequireQualifiedAccess>]
 module UserData =
-  open Validation
 
   let make (name, quota, rootFolder) : Result<UserData, ValidationError> =
     { Name = name
