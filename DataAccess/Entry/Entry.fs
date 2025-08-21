@@ -3,7 +3,6 @@ module DrizzleCarton.RAMDataAccess.Entry
 open DrizzleCarton.Application
 open DrizzleCarton.Application.EntryRepositoryContract
 open DrizzleCarton.Model
-open DrizzleCarton.Model.Entry
 open DrizzleCarton.RAMDataAccess
 open DrizzleCarton.ResultHelper
 
@@ -31,9 +30,6 @@ let entryPersistence: IEntryRepository =
       member this.StoreEntry
         (name: EntryName, parent: EntryParent, kind: EntryKind, size: EntrySize)
         : Result<Entry, WriteEntryFailure> =
-        raise (System.NotImplementedException())
-
-      member this.StoreNewRootFolder() : Result<Entry, WriteEntryFailure> =
         raise (System.NotImplementedException())
 
       member this.UpdateEntry(entry: Entry) : Result<Entry, WriteEntryFailure> =
