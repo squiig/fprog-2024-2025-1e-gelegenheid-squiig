@@ -56,7 +56,7 @@ let renameUser (rawId: int) : HttpHandler =
               ctx
         | FindByIdResult.NotFound -> return! RequestErrors.NOT_FOUND "No user found by this id" next ctx
         | FindByIdResult.Found oldUser ->
-          let! encodedName = ctx.ReadBodyFromRequestAsync false
+          let! encodedName = ctx.ReadBodyFromRequestAsync false // TODO: test this, it seems shady
 
           match Decode.fromString Decode.string encodedName with
           | Error e -> return! RequestErrors.BAD_REQUEST (sprintf "%A" e) next ctx
@@ -65,7 +65,7 @@ let renameUser (rawId: int) : HttpHandler =
             | Error(Validation.ValidationError msg) -> return! RequestErrors.UNPROCESSABLE_ENTITY msg next ctx
             | Ok newUsername ->
               let id, _, quota, root = User.toTuple oldUser
-
+              
               match User.make (id, newUsername, quota, root) with
               | Error(Validation.ValidationError msg) ->
                 return!
@@ -96,24 +96,20 @@ let createUser: HttpHandler =
       match Decode.Auto.fromString<CreateUserRequestDTO> data with
       | Error e -> return! RequestErrors.BAD_REQUEST (sprintf "%s" e) next ctx
       | Ok userDTO ->
-        match Entry.storeNewRootFolder entryRepo with
-        | StoreResult.DataFailure msg ->
-          return!
-            ServerErrors.INTERNAL_ERROR
-              $"Aborting user creation! Failed to create root folder for new user. Message: %s{msg}"
-              next
-              ctx
-        | EntryStored rootFolder ->
-          let rootFolderId, _, _, _, _ = Entry.toTuple rootFolder
-
-          match User.add userRepo (userDTO.Name, userDTO.Quota, rootFolderId) with
+          match User.add userRepo entryRepo (userDTO.Name, userDTO.Quota) with
           | AddResult.DataAccessError msg ->
             return!
               ServerErrors.INTERNAL_ERROR
                 $"Cannot process this request right now. Data access failed. Message: %s{msg}"
                 next
                 ctx
-          | InvalidFieldError msg ->
+          | RootFolderError msg -> 
+            return!
+              ServerErrors.INTERNAL_ERROR
+                $"Aborting user creation! Failed to create root folder for new user. Message: %s{msg}"
+                next
+                ctx
+          | InvalidUserError msg ->
             return! RequestErrors.UNPROCESSABLE_ENTITY $"Could not create user, input data invalid: %s{msg}" next ctx
           | Stored user -> return! json user next ctx
     }
