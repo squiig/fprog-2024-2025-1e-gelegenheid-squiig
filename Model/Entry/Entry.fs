@@ -12,13 +12,15 @@ type EntryKind =
 
 type EntrySize = private EntrySize of int
 
-type Entry =
+type EntryData =
   private
-    { Id: EntryId
-      Name: EntryName
+    { Name: EntryName
       Parent: EntryParent
       Kind: EntryKind
       Size: EntrySize }
+
+type Entry =
+  private { Id: EntryId; Data: EntryData }
 
 [<RequireQualifiedAccess>]
 module EntryId =
@@ -97,7 +99,7 @@ module EntrySize =
   let toRaw (EntrySize(size)) = size
 
 [<RequireQualifiedAccess>]
-module Entry =
+module EntryData =
 
   let hasParent entry = entry.Parent <> EntryParent.none
 
@@ -134,9 +136,8 @@ module Entry =
       else
         Ok entry
 
-  let make (id, name, parent, kind, size) =
-    { Id = id
-      Name = name
+  let make (name, parent, kind, size) : Result<EntryData, ValidationError> =
+    { Name = name
       Parent = parent
       Kind = kind
       Size = size }
@@ -146,25 +147,35 @@ module Entry =
     |> Result.bind (Validation.nonRootEntryHasParent "Non-root entries must have a parent.")
     |> Result.mapError Validation.ValidationError
 
-  let ofRaw (id, name, parent, kind, size) =
-    EntryId.ofRaw id
-    |> Result.bind (fun entryId ->
-      EntryName.ofRaw name
-      |> Result.bind (fun entryName ->
-        EntryParent.ofRaw parent
-        |> Result.bind (fun entryParent ->
-          EntryKind.ofRaw kind
-          |> Result.bind (fun entryKind ->
-            EntrySize.ofRaw size
-            |> Result.map (fun entrySize -> (entryId, entryName, entryParent, entryKind, entrySize))))))
+  let ofRaw (rawName, rawParent, rawKind, rawSize) : Result<EntryData, ValidationError> =
+    EntryName.ofRaw rawName
+    |> Result.bind (fun entryName ->
+      EntryParent.ofRaw rawParent
+      |> Result.bind (fun entryParent ->
+        EntryKind.ofRaw rawKind
+        |> Result.bind (fun entryKind ->
+          EntrySize.ofRaw rawSize
+          |> Result.map (fun entrySize -> (entryName, entryParent, entryKind, entrySize)))))
     |> Result.bind make
 
+  let toTuple data =
+    data.Name, data.Parent, data.Kind, data.Size
+
+[<RequireQualifiedAccess>]
+module Entry =
+
+  let withId (data: EntryData) (id: EntryId) = { Id = id; Data = data }
+
+  let make (id, name, parent, kind, size) =
+    EntryData.make (name, parent, kind, size)
+    |> Result.map (fun data -> withId data id)
+
   let toTuple (entry: Entry) =
-    entry.Id, entry.Name, entry.Parent, entry.Kind, entry.Size
+    entry.Id, entry.Data.Name, entry.Data.Parent, entry.Data.Kind, entry.Data.Size
 
   let toRawTuple entry =
     EntryId.toRaw entry.Id,
-    EntryName.toRaw entry.Name,
-    EntryParent.toRaw entry.Parent |> Option.map EntryId.toRaw,
-    EntryKind.toRaw entry.Kind,
-    EntrySize.toRaw entry.Size
+    EntryName.toRaw entry.Data.Name,
+    EntryParent.toRaw entry.Data.Parent |> Option.map EntryId.toRaw,
+    EntryKind.toRaw entry.Data.Kind,
+    EntrySize.toRaw entry.Data.Size
