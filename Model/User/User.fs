@@ -80,14 +80,15 @@ module UserData =
     { Name = name
       Quota = quota
       RootFolder = rootFolder }
+    // Potential validations across fields...
     |> Ok
 
-  let ofRaw (name, quota, rootFolder) =
-    UserName.ofRaw name
+  let ofRaw (rawName, rawQuota, rawRootId) : Result<UserData, ValidationError> =
+    UserName.ofRaw rawName
     |> Result.bind (fun userName ->
-      UserQuota.ofRaw quota
+      UserQuota.ofRaw rawQuota
       |> Result.bind (fun userQuota ->
-        UserRoot.ofRaw rootFolder
+        UserRoot.ofRaw rawRootId
         |> Result.map (fun userRoot -> (userName, userQuota, userRoot))))
     |> Result.bind make
 
@@ -96,17 +97,17 @@ module UserData =
 [<RequireQualifiedAccess>]
 module User =
 
-  let make (id, name, quota, rootFolder) =
-    UserData.make (name, quota, rootFolder)
-    |> Result.map (fun data -> { Id = id; Data = data })
-
   let giveId (data: UserData) (id: UserId) = { Id = id; Data = data }
 
-  let ofRaw (id, name, quota, rootFolder) =
-    UserId.ofRaw id
-    |> Result.bind (fun userId ->
-      UserData.ofRaw (name, quota, rootFolder)
-      |> Result.map (fun data -> giveId data userId))
+  let make (id, name, quota, rootFolder) =
+    UserData.make (name, quota, rootFolder)
+    |> Result.map (fun data -> giveId data id)
+
+  let ofRaw (rawId, rawName, rawQuota, rawRootId) =
+    UserId.ofRaw rawId
+    |> Result.bind (fun id ->
+      UserData.ofRaw (rawName, rawQuota, rawRootId)
+      |> Result.map (fun data -> giveId data id))
 
   let toTuple (user: User) =
     user.Id, user.Data.Name, user.Data.Quota, user.Data.RootFolder
