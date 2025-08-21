@@ -4,7 +4,7 @@ open Validation
 
 type UserName = private UserName of string
 type UserQuota = private UserQuota of int
-type UserRoot = private UserRoot of EntryId
+type UserRoot = private UserRoot of Entry
 
 type UserData =
   private
@@ -66,12 +66,18 @@ module UserQuota =
 
   let toRaw (UserQuota(quota)) = quota
 
-// TODO: Invariant that must be enforced by Application layer: Must be the identifier of a folder with the name "files" that has no parent entry
 [<RequireQualifiedAccess>]
 module UserRoot =
-  let ofRaw id = UserRoot id |> Ok
+  let validate (root: Entry) =
+    (if not (EntryData.isRootFolder root.Data) then
+       Error "Entry must be a valid root folder to be a UserRoot."
+     else
+       Ok root)
+    |> Result.mapError ValidationError
 
-  let toRaw (UserRoot(id)) = id
+  let ofRaw entry = validate entry |> Result.map UserRoot
+
+  let toRaw (UserRoot(entry)) = entry
 
 [<RequireQualifiedAccess>]
 module UserData =
@@ -83,12 +89,12 @@ module UserData =
     // Potential validations across fields...
     |> Ok
 
-  let ofRaw (rawName, rawQuota, rawRootId) : Result<UserData, ValidationError> =
+  let ofRaw (rawName, rawQuota, rawRoot) : Result<UserData, ValidationError> =
     UserName.ofRaw rawName
     |> Result.bind (fun userName ->
       UserQuota.ofRaw rawQuota
       |> Result.bind (fun userQuota ->
-        UserRoot.ofRaw rawRootId
+        UserRoot.ofRaw rawRoot
         |> Result.map (fun userRoot -> (userName, userQuota, userRoot))))
     |> Result.bind make
 
@@ -97,17 +103,11 @@ module UserData =
 [<RequireQualifiedAccess>]
 module User =
 
-  let giveId (data: UserData) (id: UserId) = { Id = id; Data = data }
+  let withId (data: UserData) (id: UserId) = { Id = id; Data = data }
 
   let make (id, name, quota, rootFolder) =
     UserData.make (name, quota, rootFolder)
-    |> Result.map (fun data -> giveId data id)
-
-  let ofRaw (rawId, rawName, rawQuota, rawRootId) =
-    UserId.ofRaw rawId
-    |> Result.bind (fun id ->
-      UserData.ofRaw (rawName, rawQuota, rawRootId)
-      |> Result.map (fun data -> giveId data id))
+    |> Result.map (fun data -> withId data id)
 
   let toTuple (user: User) =
     user.Id, user.Data.Name, user.Data.Quota, user.Data.RootFolder
