@@ -77,7 +77,7 @@ module UserRoot =
 [<RequireQualifiedAccess>]
 module User =
 
-  let make (id, name, quota, rootFolder) =
+  let make (id, name, quota, rootFolder) : Result<User, Validation.ValidationError> =
     { Id = id
       Username = name
       Quota = quota
