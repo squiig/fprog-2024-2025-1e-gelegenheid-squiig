@@ -14,5 +14,5 @@ type WriteUserFailure = DataAccessError of string
 type IUserRepository =
   abstract GetAllUsers: unit -> Result<User list, ReadUserFailure>
   abstract FindUserById: UserId -> Result<User option, ReadUserFailure>
-  abstract StoreUser: UserName * UserQuota * UserRoot -> Result<User, WriteUserFailure>
+  abstract StoreUser: UserData -> Result<UserId, WriteUserFailure>
   abstract UpdateUser: User -> Result<User, WriteUserFailure>
