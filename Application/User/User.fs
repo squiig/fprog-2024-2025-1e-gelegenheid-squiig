@@ -27,7 +27,18 @@ let findById (userRepo: IUserRepository) (id: UserId) =
   | Ok None -> NotFound
   | Ok(Some user) -> Found user
 
-let add (userRepo: IUserRepository) user = userRepo.StoreUser user
+type AddResult =
+  | DataAccessError of string
+  | InvalidFieldError of string
+  | Stored of User
+
+let add (userRepo: IUserRepository) (rawUserName, rawUserQuota, rawUserRoot) =
+  match UserData.ofRaw (rawUserName, rawUserQuota, rawUserRoot) with
+  | Error(Validation.ValidationError msg) -> InvalidFieldError msg
+  | Ok userData ->
+    match userRepo.StoreUser userData with
+    | Error(WriteUserFailure.DataAccessError msg) -> DataAccessError msg
+    | Ok storedUserId -> User.giveId userData storedUserId |> Stored
 
 let update (userRepo: IUserRepository) user = userRepo.UpdateUser user
 
