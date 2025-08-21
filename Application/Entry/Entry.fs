@@ -8,7 +8,7 @@ type StoreResult =
   | EntryStored of Entry
   | DataFailure of string
 
-let newRoot (entryRepo: IEntryRepository) =
+let storeNewRootFolder (entryRepo: IEntryRepository) =
   match entryRepo.StoreNewRootFolder() with
   | Error(WriteEntryFailure.DataAccessError s) -> DataFailure s
   | Ok entry -> EntryStored entry
