@@ -15,6 +15,5 @@ type IEntryRepository =
   abstract GetAllEntries: unit -> Result<Entry list, ReadEntryFailure>
   abstract GetSubEntries: EntryId -> Result<Entry list, ReadEntryFailure>
   abstract FindEntryById: EntryId -> Result<Entry option, ReadEntryFailure>
-  abstract StoreEntry: EntryName * EntryParent * EntryKind * EntrySize -> Result<Entry, WriteEntryFailure>
-  abstract StoreNewRootFolder: unit -> Result<Entry, WriteEntryFailure>
+  abstract StoreEntry: EntryData -> Result<EntryId, WriteEntryFailure>
   abstract UpdateEntry: Entry -> Result<Entry, WriteEntryFailure>
