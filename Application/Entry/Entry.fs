@@ -8,10 +8,11 @@ type StoreResult =
   | EntryStored of Entry
   | DataFailure of string
 
+let add (entryRepo: IEntryRepository) (name, parent, kind, size) =
+  failwith "TODO"
+
 let storeNewRootFolder (entryRepo: IEntryRepository) =
-  match entryRepo.StoreNewRootFolder() with
-  | Error(WriteEntryFailure.DataAccessError s) -> DataFailure s
-  | Ok entry -> EntryStored entry
+  add entryRepo (EntryName.root, EntryParent.none, EntryKind.Folder, EntrySize.zero)
 
 type FindByIdResult =
   | EntryFound of Entry
