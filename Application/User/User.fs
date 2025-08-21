@@ -29,31 +29,27 @@ let findById (userRepo: IUserRepository) (id: UserId) =
 
 type AddResult =
   | DataAccessError of string
-  | InvalidFieldError of string
+  | RootFolderError of string
+  | InvalidUserError of string
   | Stored of User
 
-let add (userRepo: IUserRepository) (rawUserName, rawUserQuota, rawUserRoot) =
-  match UserData.ofRaw (rawUserName, rawUserQuota, rawUserRoot) with
-  | Error(Validation.ValidationError msg) -> InvalidFieldError msg
-  | Ok userData ->
-    match userRepo.StoreUser userData with
-    | Error(WriteUserFailure.DataAccessError msg) -> DataAccessError msg
-    | Ok storedUserId -> User.giveId userData storedUserId |> Stored
+let add (userRepo: IUserRepository) (entryRepo: IEntryRepository) (rawUserName, rawUserQuota) =
+  match Entry.storeNewRootFolder entryRepo with
+  | Entry.StoreResult.DataFailure msg -> RootFolderError msg
+  | Entry.EntryStored rootFolder ->
+    match UserData.ofRaw (rawUserName, rawUserQuota, rootFolder) with
+    | Error(Validation.ValidationError msg) -> InvalidUserError msg
+    | Ok userData ->
+      match userRepo.StoreUser userData with
+      | Error(WriteUserFailure.DataAccessError msg) -> DataAccessError msg
+      | Ok storedUserId -> User.withId userData storedUserId |> Stored
 
 let update (userRepo: IUserRepository) user = userRepo.UpdateUser user
 
 module Validation =
-  let validUserRoot entryRepo invalid user =
-    let _, _, _, root = User.toTuple user
-    let rootId = UserRoot.toRaw root
 
-    match Entry.findById entryRepo rootId with
-    | Entry.FindByIdResult.DataFailure s -> Error s
-    | Entry.EntryNotFound -> Error invalid
-    | Entry.EntryFound e -> if Entry.isRootFolder e then Ok user else Error invalid
-    |> Result.mapError ValidationError
-
-  let validate (entryRepo: IEntryRepository) user =
+  let validate (entryRepo: IEntryRepository) (user: User) =
     user
-    |> validUserRoot entryRepo "Users must have a valid root folder."
+    // Potential validations...
+    |> Ok
     |> Result.map (fun _ -> user) // Whatever previous validations returned, return the input user if all succeeded
