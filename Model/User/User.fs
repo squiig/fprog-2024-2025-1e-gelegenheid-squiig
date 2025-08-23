@@ -69,7 +69,7 @@ module UserQuota =
 [<RequireQualifiedAccess>]
 module UserRoot =
   let validate (root: Entry) =
-    (if not (EntryData.isRootFolder root.Data) then
+    (if not (Entry.isRootFolder root.Data) then
        Error "Entry must be a valid root folder to be a UserRoot."
      else
        Ok root)
@@ -102,6 +102,8 @@ module UserData =
 
 [<RequireQualifiedAccess>]
 module User =
+
+  let getData user = user.Data
 
   let withId (data: UserData) (id: UserId) = { Id = id; Data = data }
 
