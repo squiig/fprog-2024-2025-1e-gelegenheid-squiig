@@ -24,10 +24,7 @@ let rec buildEntryDTO (entryRepo: IEntryRepository) (entry: Entry) : NestedEntri
     { Entry = entryDTO
       SubEntries = subEntries |> List.map (buildEntryDTO entryRepo) |> Some }
     |> Some
-  | ZeroSubEntries ->
-    { Entry = entryDTO
-      SubEntries = None }
-    |> Some
+  | ZeroSubEntries -> { Entry = entryDTO; SubEntries = None } |> Some
   | GetSubEntriesResult.DataFailure _ -> None
 
 let getAllEntriesOfUser (rawUserId: int) : HttpHandler =
@@ -39,16 +36,16 @@ let getAllEntriesOfUser (rawUserId: int) : HttpHandler =
       // validate user id
       let userId =
         match UserId.ofRaw rawUserId with
-        | Error (ValidationError msg) -> failwith msg // TODO: send proper failure response
+        | Error(ValidationError msg) -> failwith msg // TODO: send proper failure response
         | Ok id -> id
 
       match userRepo.FindUserById userId with
       //| Error _ -> return! RequestErrors.NOT_FOUND (sprintf "%i" userId) next ctx
-      | Error (ModelValidationError msg) -> failwith msg // TODO: send proper failure response
-      | Error (ReadUserFailure.DataAccessError msg) -> failwith msg // TODO: send proper failure response
+      | Error(ModelValidationError msg) -> failwith msg // TODO: send proper failure response
+      | Error(ReadUserFailure.DataAccessError msg) -> failwith msg // TODO: send proper failure response
       | Ok None -> failwith msg // TODO: send proper failure response
-      | Ok (Some user) ->
-        let _,_,_,userRoot = User.toTuple user
+      | Ok(Some user) ->
+        let _, _, _, userRoot = User.toTuple user
         let userRootId = UserRoot.toRaw userRoot
 
         match entryRepo.FindEntryById userRootId with
@@ -58,10 +55,10 @@ let getAllEntriesOfUser (rawUserId: int) : HttpHandler =
         //      (sprintf "Root folder for %s(%i) not found: %A" user.Username user.RootFolder e)
         //      next
         //      ctx
-        | Error (ReadEntryFailure.ModelValidationError msg) -> failwith msg // TODO: send proper failure response
-        | Error (ReadEntryFailure.DataAccessError msg) -> failwith msg // TODO: send proper failure response
+        | Error(ReadEntryFailure.ModelValidationError msg) -> failwith msg // TODO: send proper failure response
+        | Error(ReadEntryFailure.DataAccessError msg) -> failwith msg // TODO: send proper failure response
         | Ok None -> failwith msg // TODO: send proper failure response
-        | Ok (Some root) ->
+        | Ok(Some root) ->
           let response = buildEntryDTO entryRepo root
           return! json response next ctx
     }
