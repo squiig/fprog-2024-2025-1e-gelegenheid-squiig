@@ -1,5 +1,6 @@
 module DrizzleCarton.HTTPWebService.Entry
 
+open DrizzleCarton.Application
 open DrizzleCarton.Application.Entry
 open DrizzleCarton.Application.EntryRepositoryContract
 open DrizzleCarton.Application.User
@@ -34,32 +35,15 @@ let getAllEntriesOfUser (rawUserId: int) : HttpHandler =
       let entryRepo = ctx.GetService<IEntryRepository>()
       let userRepo = ctx.GetService<IUserRepository>()
 
-      // validate user id
-      let userId =
-        match UserId.ofRaw rawUserId with
-        | Error(ValidationError msg) -> failwith msg // TODO: send proper failure response
-        | Ok id -> id
-
-      match userRepo.FindUserById userId with
-      //| Error _ -> return! RequestErrors.NOT_FOUND (sprintf "%i" userId) next ctx
-      | Error(ModelValidationError msg) -> failwith msg // TODO: send proper failure response
-      | Error(ReadUserFailure.DataAccessError msg) -> failwith msg // TODO: send proper failure response
-      | Ok None -> failwith msg // TODO: send proper failure response
-      | Ok(Some user) ->
+      match User.findById userRepo rawUserId with
+      | DataRetrievingError msg ->
+        return! ServerErrors.INTERNAL_ERROR $"Error: User data could not be retrieved. %s{msg}" next ctx
+      | FindByIdResult.InvalidIdError msg ->
+        return! RequestErrors.UNPROCESSABLE_ENTITY $"Provided user id is not valid! %s{msg}" next ctx
+      | NotFound -> return! RequestErrors.NOT_FOUND "No user found by this id." next ctx
+      | Found user ->
         let _, _, _, userRoot = User.toTuple user
-        let userRootId = UserRoot.toRaw userRoot
-
-        match entryRepo.FindEntryById userRootId with
-        //| Error e ->
-        //  return!
-        //    RequestErrors.NOT_FOUND
-        //      (sprintf "Root folder for %s(%i) not found: %A" user.Username user.RootFolder e)
-        //      next
-        //      ctx
-        | Error(ReadEntryFailure.ModelValidationError msg) -> failwith msg // TODO: send proper failure response
-        | Error(ReadEntryFailure.DataAccessError msg) -> failwith msg // TODO: send proper failure response
-        | Ok None -> failwith msg // TODO: send proper failure response
-        | Ok(Some root) ->
-          let response = buildEntryDTO entryRepo root
-          return! json response next ctx
+        let userRootEntry = UserRoot.toRaw userRoot
+        let response = buildEntryDTO entryRepo userRootEntry
+        return! json response next ctx
     }
