@@ -16,7 +16,7 @@ let getAllUsers: HttpHandler =
     let userRepo = ctx.GetService<IUserRepository>()
 
     match getAll userRepo with
-    | GetAllResult.DataFailure msg ->
+    | GetAllResult.DataRetrievingError msg ->
       ServerErrors.INTERNAL_ERROR
         $"Cannot process this request right now. Data could not be retrieved: %s{msg}"
         next
@@ -27,61 +27,33 @@ let getUser (rawId: int) : HttpHandler =
   fun next ctx ->
     let userRepo = ctx.GetService<IUserRepository>()
 
-    match UserId.ofRaw rawId with
-    | Error(Validation.ValidationError msg) -> RequestErrors.UNPROCESSABLE_ENTITY msg next ctx
-    | Ok userId ->
-      match findById userRepo userId with
-      | FindByIdResult.DataFailure msg ->
-        ServerErrors.INTERNAL_ERROR
-          $"Cannot process this request right now. Data could not be retrieved: %s{msg}"
-          next
-          ctx
-      | FindByIdResult.NotFound -> RequestErrors.NOT_FOUND "No user found by this id" next ctx
-      | FindByIdResult.Found user -> json user next ctx
+    match findById userRepo rawId with
+    | FindByIdResult.DataRetrievingError msg ->
+      ServerErrors.INTERNAL_ERROR
+        $"Cannot process this request right now. Data could not be retrieved: %s{msg}"
+        next
+        ctx
+    | FindByIdResult.InvalidIdError msg -> RequestErrors.UNPROCESSABLE_ENTITY $"Provided user id is not valid! %s{msg}" next ctx
+    | FindByIdResult.NotFound -> RequestErrors.NOT_FOUND "No user found by this id" next ctx
+    | FindByIdResult.Found user -> json user next ctx
 
 let renameUser (rawId: int) : HttpHandler =
   fun next ctx ->
     task {
       let userRepo = ctx.GetService<IUserRepository>()
-
-      match UserId.ofRaw rawId with
-      | Error(Validation.ValidationError msg) -> return! RequestErrors.UNPROCESSABLE_ENTITY msg next ctx
-      | Ok userId ->
-        match findById userRepo userId with
-        | FindByIdResult.DataFailure msg ->
-          return!
-            ServerErrors.INTERNAL_ERROR
-              $"Cannot process this request right now. Data could not be retrieved: %s{msg}"
-              next
-              ctx
-        | FindByIdResult.NotFound -> return! RequestErrors.NOT_FOUND "No user found by this id" next ctx
-        | FindByIdResult.Found oldUser ->
-          let! encodedName = ctx.ReadBodyFromRequestAsync false // TODO: test this, it seems shady
-
-          match Decode.fromString Decode.string encodedName with
-          | Error e -> return! RequestErrors.BAD_REQUEST (sprintf "%A" e) next ctx
-          | Ok decodedName ->
-            match UserName.ofRaw decodedName with
-            | Error(Validation.ValidationError msg) -> return! RequestErrors.UNPROCESSABLE_ENTITY msg next ctx
-            | Ok newUsername ->
-              let id, _, quota, root = User.toTuple oldUser
-              
-              match User.make (id, newUsername, quota, root) with
-              | Error(Validation.ValidationError msg) ->
-                return!
-                  ServerErrors.INTERNAL_ERROR
-                    $"Unexpected user validation error when trying to rename user with id %i{rawId} to name %s{decodedName}. Message: %s{msg}"
-                    next
-                    ctx
-              | Ok dirtyUser ->
-                match User.update userRepo dirtyUser with
-                | Error(DataAccessError msg) ->
-                  return!
-                    ServerErrors.INTERNAL_ERROR
-                      $"Cannot process this request right now. Data access failed. Message: %s{msg}"
-                      next
-                      ctx
-                | Ok updatedUser -> return! json updatedUser next ctx
+      let! encodedName = ctx.ReadBodyFromRequestAsync false // TODO: test this, it seems shady
+      
+      match Decode.fromString Decode.string encodedName with
+      | Error e -> return! RequestErrors.BAD_REQUEST (sprintf "%A" e) next ctx
+      | Ok decodedName ->
+        match User.rename userRepo rawId decodedName with
+        | RenameResult.DataReadingError msg -> return! ServerErrors.INTERNAL_ERROR $"Cannot process this request right now. User data could not be retrieved: %s{msg}" next ctx
+        | RenameResult.DataWritingError msg -> return! ServerErrors.INTERNAL_ERROR $"Cannot process this request right now. User could not be updated: %s{msg}" next ctx
+        | RenameResult.InvalidIdError msg -> return! RequestErrors.UNPROCESSABLE_ENTITY $"Provided user id is not valid! %s{msg}" next ctx
+        | RenameResult.InvalidNameError msg -> return! RequestErrors.UNPROCESSABLE_ENTITY $"Provided name is not valid! %s{msg}" next ctx
+        | RenameResult.InvalidNameForUserError msg -> return! RequestErrors.UNPROCESSABLE_ENTITY $"Provided name is not valid for this user! %s{msg}" next ctx
+        | RenameResult.UserNotFoundError -> return! RequestErrors.NOT_FOUND "No user found by this id" next ctx
+        | RenameResult.UserUpdated updatedUser -> return! json updatedUser next ctx
     }
 
 type CreateUserRequestDTO = { Name: string; Quota: int }
@@ -97,19 +69,19 @@ let createUser: HttpHandler =
       | Error e -> return! RequestErrors.BAD_REQUEST (sprintf "%s" e) next ctx
       | Ok userDTO ->
           match User.add userRepo entryRepo (userDTO.Name, userDTO.Quota) with
-          | AddResult.DataAccessError msg ->
+          | UserDataStoringError msg ->
             return!
               ServerErrors.INTERNAL_ERROR
-                $"Cannot process this request right now. Data access failed. Message: %s{msg}"
+                $"Error: Could not store user data. %s{msg}"
                 next
                 ctx
-          | RootFolderError msg -> 
+          | RootFolderStoringError msg -> 
             return!
               ServerErrors.INTERNAL_ERROR
-                $"Aborting user creation! Failed to create root folder for new user. Message: %s{msg}"
+                $"Error: Could not store root folder for new user. %s{msg}"
                 next
                 ctx
           | InvalidUserError msg ->
-            return! RequestErrors.UNPROCESSABLE_ENTITY $"Could not create user, input data invalid: %s{msg}" next ctx
+            return! RequestErrors.UNPROCESSABLE_ENTITY $"Could not create user, input data invalid! %s{msg}" next ctx
           | Stored user -> return! json user next ctx
     }
