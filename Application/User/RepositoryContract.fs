@@ -1,14 +1,15 @@
 module DrizzleCarton.Application.UserRepositoryContract
 
 open DrizzleCarton.Model
+open DrizzleCarton.Application.Common
 
 /// Any error that may come from the data access implementation when attempting to read Users.
 type ReadUserFailure =
-  | ModelValidationError of string
-  | DataAccessError of string
+  | ModelValidationError of Message
+  | DataAccessError of Message
 
 /// Any error that may come from the data access implementation when attempting to write Users.
-type WriteUserFailure = DataAccessError of string
+type WriteUserFailure = DataAccessError of Message
 
 /// Defines the data operations for User functionality to be implemented by some data access dependency.
 type IUserRepository =
