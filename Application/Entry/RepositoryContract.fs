@@ -1,14 +1,15 @@
 module DrizzleCarton.Application.EntryRepositoryContract
 
 open DrizzleCarton.Model
+open DrizzleCarton.Application.Common
 
 /// Any error that may come from the data access implementation when attempting to read Entries.
 type ReadEntryFailure =
-  | ModelValidationError of string
-  | DataAccessError of string
+  | ModelValidationError of Message
+  | DataAccessError of Message
 
 /// Any error that may come from the data access implementation when attempting to write Entries.
-type WriteEntryFailure = DataAccessError of string
+type WriteEntryFailure = DataAccessError of Message
 
 /// Defines the data operations for Entry functionality to be implemented by some data access dependency.
 type IEntryRepository =
