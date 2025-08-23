@@ -9,7 +9,7 @@ type FindByIdResult =
   | EntryNotFound
   | DataRetrievingError of Message
 
-let findById (entryRepo: IEntryRepository) id =
+let private findById (entryRepo: IEntryRepository) id =
   match entryRepo.FindEntryById id with
     | Error(ReadEntryFailure.DataAccessError msg) -> DataRetrievingError msg
     | Error(ModelValidationError msg) ->
