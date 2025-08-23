@@ -12,4 +12,4 @@ let webApp: HttpHandler =
 
       PUT >=> routef "/user/%i/username" User.renameUser
 
-      GET >=> routef "/user/%i/file" Entry.getAllEntries ]
+      GET >=> routef "/user/%i/file" Entry.getAllEntriesOfUser ]
