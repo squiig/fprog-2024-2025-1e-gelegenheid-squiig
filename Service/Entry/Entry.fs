@@ -30,7 +30,7 @@ let rec buildEntryDTO (entryRepo: IEntryRepository) (entry: Entry) : NestedEntri
     |> Some
   | GetSubEntriesResult.DataFailure _ -> None
 
-let getAllEntries (rawUserId: int) : HttpHandler =
+let getAllEntriesOfUser (rawUserId: int) : HttpHandler =
   fun next ctx ->
     task {
       let entryRepo = ctx.GetService<IEntryRepository>()
