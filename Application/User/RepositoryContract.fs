@@ -25,3 +25,4 @@ type IUserRepository =
   abstract FindUserById: UserId -> Result<User option, ReadUserFailure>
   abstract StoreUser: UserData -> Result<UserId, WriteUserFailure>
   abstract UpdateUser: User -> Result<User, UpdateUserFailure>
+  abstract GetTotalBytesStored: UserId -> Result<ByteCount, ReadUserFailure>
