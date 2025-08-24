@@ -127,12 +127,12 @@ module Validation =
   let validate (entryRepo: IEntryRepository) (entryData: EntryData) : Result<EntryData, ValidationError> =
     entryData |> validateAncestors entryRepo |> Result.map (fun _ -> entryData) // Make sure to always return the original entry on successful validation
 
-type AddResult =
+type CreateResult =
   | DataStoringError of Message
   | InvalidEntryError of Message
   | Stored of Entry
 
-let add (entryRepo: IEntryRepository) (name, parent, kind, size) =
+let create (entryRepo: IEntryRepository) (name, parent, kind, size) =
   match Entry.EntryData.ofRaw (name, parent, kind, size) with
   | Error(Validation.ValidationError msg) -> InvalidEntryError msg
   | Ok entryData ->
