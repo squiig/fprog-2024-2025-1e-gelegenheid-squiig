@@ -50,7 +50,7 @@ module RAMDataAccess =
   let defaultDb = connect ()
 
 
-  let user (id: int) (db: RAMDataAccess) : Result<UserTuple, RAMDataAccessError> =
+  let user (db: RAMDataAccess) (id: int) : Result<UserTuple, RAMDataAccessError> =
     match db.Users |> Map.tryFind id with
     | Some user -> Ok user
     | None -> Error(NotFound id)
