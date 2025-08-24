@@ -133,3 +133,5 @@ module User =
     UserName.toRaw user.Data.Name,
     UserQuota.toRaw user.Data.Quota,
     UserRoot.toRaw user.Data.RootFolder |> Entry.getId |> EntryId.toRaw
+
+  let rawName user = UserName.toRaw user.Data.Name

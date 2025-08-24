@@ -84,8 +84,8 @@ type GetTotalBytesResult =
   | UserDataRetrievingError of Message
   | EntryDataRetrievingError of Message
   | UserNotFound
-  | ZeroEntries
-  | TotalBytesCounted of ByteCount
+  | ZeroEntries of User
+  | TotalBytesCounted of User * ByteCount
 
 let getTotalBytesStoredByUserId userRepo entryRepo userId =
   match findById userRepo userId with
@@ -97,5 +97,5 @@ let getTotalBytesStoredByUserId userRepo entryRepo userId =
 
     match Entry.getSubEntries entryRepo (Entry.getId rootEntry) with
     | Entry.GetSubEntriesResult.DataRetrievingError msg -> EntryDataRetrievingError msg
-    | Entry.GetSubEntriesResult.ZeroSubEntries -> ZeroEntries
-    | Entry.GetSubEntriesResult.SubEntriesFound entries -> Entry.sumEntryBytes entries |> TotalBytesCounted
+    | Entry.GetSubEntriesResult.ZeroSubEntries -> ZeroEntries user
+    | Entry.GetSubEntriesResult.SubEntriesFound entries -> TotalBytesCounted (user, Entry.sumEntryBytes entries)

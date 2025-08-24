@@ -99,6 +99,9 @@ let getTotalBytesStoredByUser (rawUserId: int) : HttpHandler =
     let userRepo = ctx.GetService<IUserRepository>()
     let entryRepo = ctx.GetService<IEntryRepository>()
 
+    let formatMsg (userName, count) =
+      text $"User %s{userName} has a total of %d{count} bytes stored"
+
     match UserId.ofRaw rawUserId with
     | Error(Validation.ValidationError msg) ->
       RequestErrors.UNPROCESSABLE_ENTITY $"Error: Provided user id invalid! %s{msg}" next ctx
@@ -109,5 +112,5 @@ let getTotalBytesStoredByUser (rawUserId: int) : HttpHandler =
       | GetTotalBytesResult.EntryDataRetrievingError msg ->
         ServerErrors.INTERNAL_ERROR $"Error: Entry data could not be retrieved. %s{msg}" next ctx
       | GetTotalBytesResult.UserNotFound -> RequestErrors.NOT_FOUND "No user found by this id" next ctx
-      | ZeroEntries -> Successful.OK (json 0) next ctx
-      | TotalBytesCounted count -> Successful.OK (json count) next ctx
+      | ZeroEntries user -> Successful.OK (formatMsg (User.rawName user, 0)) next ctx
+      | TotalBytesCounted(user, (ByteCount count)) -> Successful.OK (formatMsg (User.rawName user, count)) next ctx
