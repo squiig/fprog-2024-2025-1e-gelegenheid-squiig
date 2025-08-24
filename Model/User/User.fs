@@ -61,7 +61,7 @@ module UserQuota =
     quota
     |> nonNegativeNumber "User quota may not be a negative number."
     |> Result.bind (fun q ->
-      if q <= min || q > max then
+      if q < min || q > max then
         Error "User quota must be between 1024 * 1024 (1 megabyte) and 2^30 (1 gigabyte)."
       else
         Ok q)
