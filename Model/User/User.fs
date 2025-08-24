@@ -122,3 +122,9 @@ module User =
 
   let toTuple (user: User) =
     user.Id, user.Data.Name, user.Data.Quota, user.Data.RootFolder
+
+  let toRawTuple user =
+    UserId.toRaw user.Id,
+    UserName.toRaw user.Data.Name,
+    UserQuota.toRaw user.Data.Quota,
+    UserRoot.toRaw user.Data.RootFolder |> Entry.getId |> EntryId.toRaw

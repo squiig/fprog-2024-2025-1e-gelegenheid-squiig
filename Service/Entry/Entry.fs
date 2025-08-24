@@ -35,15 +35,17 @@ let getAllEntriesOfUser (rawUserId: int) : HttpHandler =
       let entryRepo = ctx.GetService<IEntryRepository>()
       let userRepo = ctx.GetService<IUserRepository>()
 
-      match User.findById userRepo rawUserId with
-      | FindByIdResult.DataRetrievingError msg ->
-        return! ServerErrors.INTERNAL_ERROR $"Error: User data could not be retrieved. %s{msg}" next ctx
-      | FindByIdResult.InvalidIdError msg ->
+      match UserId.ofRaw rawUserId with
+      | Error(Validation.ValidationError msg) ->
         return! RequestErrors.UNPROCESSABLE_ENTITY $"Provided user id is not valid! %s{msg}" next ctx
-      | NotFound -> return! RequestErrors.NOT_FOUND "No user found by this id." next ctx
-      | Found user ->
-        let _, _, _, userRoot = User.toTuple user
-        let userRootEntry = UserRoot.toRaw userRoot
-        let response = buildEntryDTO entryRepo userRootEntry
-        return! json response next ctx
+      | Ok userId ->
+        match User.findById userRepo userId with
+        | FindByIdResult.DataRetrievingError msg ->
+          return! ServerErrors.INTERNAL_ERROR $"Error: User data could not be retrieved. %s{msg}" next ctx
+        | NotFound -> return! RequestErrors.NOT_FOUND "No user found by this id." next ctx
+        | Found user ->
+          let _, _, _, userRoot = User.toTuple user
+          let userRootEntry = UserRoot.toRaw userRoot
+          let response = buildEntryDTO entryRepo userRootEntry
+          return! json response next ctx
     }

@@ -44,6 +44,7 @@ let userPersistence: IUserRepository =
 
       member this.StoreUser(userData: UserData) : Result<UserId, WriteUserFailure> =
         let db = RAMDataAccess.defaultDb
+
         match RAMDataAccess.addUser db (UserData.toRawTuple userData) with
         | Error _ -> Error(WriteUserFailure.DataAccessError $"Unknown error while trying to store new User!")
         | Ok rawUser ->
@@ -53,7 +54,16 @@ let userPersistence: IUserRepository =
           |> Result.mapError (function
             | Validation.ValidationError msg -> WriteUserFailure.UnexpectedResultError msg)
 
-      member this.UpdateUser(dirtyUser: User) : Result<User, WriteUserFailure> =
-        raise (System.NotImplementedException())
+      member this.UpdateUser(dirtyUser: User) : Result<User, UpdateUserFailure> =
+        let db = RAMDataAccess.defaultDb
+
+        match RAMDataAccess.updateUser db (User.toRawTuple dirtyUser) with
+        | Error(NotFound _) -> Error UserNotFound
+        | Ok rawUpdatedUser ->
+          mapUser db rawUpdatedUser
+          |> Result.mapError (function
+            | ReadUserFailure.DataAccessError msg -> WriteUserFailure(DataAccessError msg)
+            | ReadUserFailure.ModelValidationError msg -> WriteUserFailure(UnexpectedResultError msg)
+            | ReadUserFailure.PermissionDenied -> WriteUserFailure(PermissionDenied))
 
   }

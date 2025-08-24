@@ -2,6 +2,7 @@ module DrizzleCarton.HTTPWebService.User
 
 open DrizzleCarton.Model
 open DrizzleCarton.Application
+open DrizzleCarton.Application.Common
 open DrizzleCarton.Application.Entry
 open DrizzleCarton.Application.EntryRepositoryContract
 open DrizzleCarton.Application.User
@@ -10,6 +11,11 @@ open DrizzleCarton.Application.UserRepositoryContract
 open Giraffe
 
 open Thoth.Json.Net
+
+let mapUserId rawId =
+  UserId.ofRaw rawId
+  |> Result.mapError (function
+    | Validation.ValidationError msg -> Message $"Error: Provided user id is not valid! %s{msg}")
 
 let getAllUsers: HttpHandler =
   fun next ctx ->
@@ -24,13 +30,14 @@ let getUser (rawId: int) : HttpHandler =
   fun next ctx ->
     let userRepo = ctx.GetService<IUserRepository>()
 
-    match findById userRepo rawId with
-    | FindByIdResult.DataRetrievingError msg ->
-      ServerErrors.INTERNAL_ERROR $"Error: User data could not be retrieved. %s{msg}" next ctx
-    | FindByIdResult.InvalidIdError msg ->
-      RequestErrors.UNPROCESSABLE_ENTITY $"Provided user id is not valid! %s{msg}" next ctx
-    | FindByIdResult.NotFound -> RequestErrors.NOT_FOUND "No user found by this id." next ctx
-    | FindByIdResult.Found user -> json user next ctx
+    match mapUserId rawId with
+    | Error msg -> RequestErrors.UNPROCESSABLE_ENTITY msg next ctx
+    | Ok userId ->
+      match findById userRepo userId with
+      | FindByIdResult.DataRetrievingError msg ->
+        ServerErrors.INTERNAL_ERROR $"Error: User data could not be retrieved. %s{msg}" next ctx
+      | FindByIdResult.NotFound -> RequestErrors.NOT_FOUND "No user found by this id." next ctx
+      | FindByIdResult.Found user -> json user next ctx
 
 let renameUser (rawId: int) : HttpHandler =
   fun next ctx ->
@@ -38,22 +45,26 @@ let renameUser (rawId: int) : HttpHandler =
       let userRepo = ctx.GetService<IUserRepository>()
       let! encodedName = ctx.ReadBodyFromRequestAsync false // TODO: test this, it seems shady
 
-      match Decode.fromString Decode.string encodedName with
-      | Error e -> return! RequestErrors.BAD_REQUEST (sprintf "%A" e) next ctx
-      | Ok decodedName ->
-        match User.rename userRepo rawId decodedName with
-        | RenameResult.DataRetrievingError msg ->
-          return! ServerErrors.INTERNAL_ERROR $"Error: User data could not be retrieved. %s{msg}" next ctx
-        | RenameResult.DataStoringError msg ->
-          return! ServerErrors.INTERNAL_ERROR $"Error: User could not be updated. %s{msg}" next ctx
-        | RenameResult.InvalidIdError msg ->
-          return! RequestErrors.UNPROCESSABLE_ENTITY $"Provided user id is not valid! %s{msg}" next ctx
-        | RenameResult.InvalidNameError msg ->
-          return! RequestErrors.UNPROCESSABLE_ENTITY $"Provided name is not valid! %s{msg}" next ctx
-        | RenameResult.InvalidNameForUserError msg ->
-          return! RequestErrors.UNPROCESSABLE_ENTITY $"Provided name is not valid for this user! %s{msg}" next ctx
-        | RenameResult.UserNotFoundError -> return! RequestErrors.NOT_FOUND "No user found by this id" next ctx
-        | RenameResult.UserUpdated updatedUser -> return! json updatedUser next ctx
+      match mapUserId rawId with
+      | Error msg -> return! RequestErrors.UNPROCESSABLE_ENTITY msg next ctx
+      | Ok userId ->
+        match Decode.fromString Decode.string encodedName with
+        | Error e -> return! RequestErrors.BAD_REQUEST (sprintf "%A" e) next ctx
+        | Ok decodedName ->
+          match UserName.ofRaw decodedName with
+          | Error(Validation.ValidationError msg) ->
+            return! RequestErrors.UNPROCESSABLE_ENTITY $"Error: Provided name is not valid! %s{msg}" next ctx
+          | Ok newName ->
+            match User.rename userRepo userId newName with
+            | RenameResult.DataRetrievingError msg ->
+              return! ServerErrors.INTERNAL_ERROR $"Error: User could not be retrieved. %s{msg}" next ctx
+            | RenameResult.DataStoringError msg ->
+              return! ServerErrors.INTERNAL_ERROR $"Error: User could not be updated. %s{msg}" next ctx
+            | RenameResult.InvalidNameForUserError msg ->
+              return!
+                RequestErrors.UNPROCESSABLE_ENTITY $"Error: Provided name is not valid for this user! %s{msg}" next ctx
+            | RenameResult.UserNotFoundError -> return! RequestErrors.NOT_FOUND "No user found by this id" next ctx
+            | RenameResult.UserUpdated updatedUser -> return! json updatedUser next ctx
     }
 
 type CreateUserRequestDTO = { Name: string; Quota: int }
@@ -68,12 +79,20 @@ let createUser: HttpHandler =
       match Decode.Auto.fromString<CreateUserRequestDTO> data with
       | Error e -> return! RequestErrors.BAD_REQUEST (sprintf "%s" e) next ctx
       | Ok userDTO ->
-        match User.add userRepo entryRepo (userDTO.Name, userDTO.Quota) with
-        | UserDataStoringError msg ->
-          return! ServerErrors.INTERNAL_ERROR $"Error: Could not store user data. %s{msg}" next ctx
-        | RootFolderStoringError msg ->
-          return! ServerErrors.INTERNAL_ERROR $"Error: Could not store root folder for new user. %s{msg}" next ctx
-        | InvalidUserError msg ->
-          return! RequestErrors.UNPROCESSABLE_ENTITY $"Could not create user, input data invalid! %s{msg}" next ctx
-        | Stored user -> return! json user next ctx
+        match UserName.ofRaw userDTO.Name with
+        | Error(Validation.ValidationError msg) ->
+          return! RequestErrors.UNPROCESSABLE_ENTITY $"Could not create user, username invalid! %s{msg}" next ctx
+        | Ok userName ->
+          match UserQuota.ofRaw userDTO.Quota with
+          | Error(Validation.ValidationError msg) ->
+            return! RequestErrors.UNPROCESSABLE_ENTITY $"Could not create user, quota invalid! %s{msg}" next ctx
+          | Ok userQuota ->
+            match User.add userRepo entryRepo (userName, userQuota) with
+            | UserDataStoringError msg ->
+              return! ServerErrors.INTERNAL_ERROR $"Error: Could not store user data. %s{msg}" next ctx
+            | RootFolderStoringError msg ->
+              return! ServerErrors.INTERNAL_ERROR $"Error: Could not store root folder for new user. %s{msg}" next ctx
+            | InvalidUserError msg ->
+              return! RequestErrors.UNPROCESSABLE_ENTITY $"Could not create user, input data invalid! %s{msg}" next ctx
+            | Stored user -> return! json user next ctx
     }
