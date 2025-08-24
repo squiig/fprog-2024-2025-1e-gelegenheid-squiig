@@ -11,14 +11,15 @@ type FindByIdResult =
 
 let private findById (entryRepo: IEntryRepository) id =
   match entryRepo.FindEntryById id with
-    | Error(ReadEntryFailure.DataAccessError msg) -> DataRetrievingError msg
-    | Error(ModelValidationError msg) ->
-      DataRetrievingError(
-        Message
-          $"Illegal state: Entry with id %d{(EntryId.toRaw id)} could not be validated when read from storage! '%s{msg}'"
-      )
-    | Ok(Some entry) -> EntryFound entry
-    | Ok None -> EntryNotFound
+  | Error(ReadEntryFailure.DataAccessError msg) -> DataRetrievingError msg
+  | Error(ReadEntryFailure.ModelValidationError msg) ->
+    DataRetrievingError(
+      Message
+        $"Illegal state: Entry with id %d{(EntryId.toRaw id)} could not be validated when read from storage! '%s{msg}'"
+    )
+  | Error(ReadEntryFailure.PermissionDenied) -> DataRetrievingError "Permission denied."
+  | Ok(Some entry) -> EntryFound entry
+  | Ok None -> EntryNotFound
 
 type FindByRawIdResult =
   | EntryFound of Entry
@@ -47,9 +48,10 @@ let getSubEntries (entryRepo: IEntryRepository) rawId : GetSubEntriesResult =
   | Ok id ->
     match entryRepo.GetSubEntries id with
     | Error(ReadEntryFailure.DataAccessError msg) -> DataRetrievingError msg
-    | Error(ModelValidationError msg) ->
+    | Error(ReadEntryFailure.ModelValidationError msg) ->
       DataRetrievingError
-        $"Illegal state: One or more of the sub-entries of entry with id %d{rawId} could not be validated when read from storage! Message: '%s{msg}'"
+        $"Error: One or more of the sub-entries of entry with id %d{rawId} could not be validated when read from storage! Details: '%s{msg}'"
+    | Error(ReadEntryFailure.PermissionDenied) -> DataRetrievingError "Permission denied."
     | Ok subEntries when subEntries.IsEmpty -> ZeroSubEntries
     | Ok subEntries -> SubEntriesFound subEntries
 
@@ -139,6 +141,9 @@ let add (entryRepo: IEntryRepository) (name, parent, kind, size) =
     | Ok validatedEntryData ->
       match entryRepo.StoreEntry validatedEntryData with
       | Error(WriteEntryFailure.DataAccessError msg) -> DataStoringError msg
+      | Error(WriteEntryFailure.PermissionDenied) -> DataStoringError "Permission denied."
+      | Error(WriteEntryFailure.UnexpectedResultError msg) ->
+        DataStoringError $"Encountered unexpected result after storing new root folder: %s{msg}"
       | Ok storedEntryId -> Entry.withId validatedEntryData storedEntryId |> Stored
 
 let storeNewRootFolder (entryRepo: IEntryRepository) =
