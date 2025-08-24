@@ -12,4 +12,6 @@ let webApp: HttpHandler =
 
       PUT >=> routef "/user/%i/username" User.renameUser
 
-      GET >=> routef "/user/%i/file" Entry.getAllEntriesOfUser ]
+      GET >=> routef "/user/%i/file" Entry.getAllEntriesOfUser
+
+      POST >=> route "/entry/folder" >=> Entry.createSubFolder ]

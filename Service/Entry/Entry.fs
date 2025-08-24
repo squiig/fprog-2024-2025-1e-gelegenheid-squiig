@@ -10,6 +10,8 @@ open DrizzleCarton.Model.Validation
 
 open Giraffe
 
+open Thoth.Json.Net
+
 type private EntryDTO = int * string * int option * string * int
 
 type private NestedEntriesDTO =
@@ -46,4 +48,33 @@ let getAllEntriesOfUser (rawUserId: int) : HttpHandler =
           let userRootEntry = UserRoot.toRaw userRoot
           let response = buildEntryDTO entryRepo userRootEntry
           return! json response next ctx
+    }
+
+type CreateSubFolderRequestDTO = { Name: string; ParentFolderId: int }
+
+let createSubFolder: HttpHandler =
+  fun next ctx ->
+    task {
+      let entryRepo = ctx.GetService<IEntryRepository>()
+      let! folderDTO = ctx.BindJsonAsync<CreateSubFolderRequestDTO>()
+
+      match EntryName.ofRaw folderDTO.Name with
+      | Error(Validation.ValidationError msg) ->
+        return! RequestErrors.UNPROCESSABLE_ENTITY $"Error: Could not create folder, name invalid! %s{msg}" next ctx
+      | Ok folderName ->
+        match EntryParent.ofRaw (Some folderDTO.ParentFolderId) with
+        | Error(Validation.ValidationError msg) ->
+          return!
+            RequestErrors.UNPROCESSABLE_ENTITY $"rror: Could not create folder, parent id invalid! %s{msg}" next ctx
+        | Ok parent ->
+          match Entry.createSubFolder entryRepo folderName parent with
+          | CreateResult.DataStoringError msg ->
+            return! ServerErrors.INTERNAL_ERROR $"Error: Could not store folder! %s{msg}" next ctx
+          | InvalidEntryError msg ->
+            return!
+              RequestErrors.UNPROCESSABLE_ENTITY
+                $"Could not create folder, combination of input data invalid! %s{msg}"
+                next
+                ctx
+          | CreateResult.Stored folder -> return! Successful.CREATED (json folder) next ctx
     }
