@@ -180,6 +180,8 @@ module Entry =
 
   let getData entry = entry.Data
 
+  let getId entry = entry.Id
+
   let withId (data: EntryData) (id: EntryId) = { Id = id; Data = data }
 
   let make (id, name, parent, kind, size) =
