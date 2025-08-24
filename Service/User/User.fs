@@ -120,4 +120,47 @@ let getLargestEntry (rawUserId: int) : HttpHandler =
     let userRepo = ctx.GetService<IUserRepository>()
     let entryRepo = ctx.GetService<IEntryRepository>()
 
-    failwith "todo"
+    let formatMsg ((largestEntry: Entry), (path: EntryPath)) =
+      let (EntryPath rawPath) = path
+
+      text
+        $"The largest file for the user with id %d{rawUserId} is entry id %d{Entry.getId largestEntry |> EntryId.toRaw} with path %s{rawPath}"
+
+    match UserId.ofRaw rawUserId with
+    | Error(Validation.ValidationError msg) ->
+      RequestErrors.UNPROCESSABLE_ENTITY $"Error: Provided user id invalid! %s{msg}" next ctx
+    | Ok userId ->
+      match User.getUserRootFolderId userRepo userId with
+      | UserDataRetrievingError msg ->
+        ServerErrors.INTERNAL_ERROR $"Error: User data could not be retrieved. %s{msg}" next ctx
+      | GetUserRootFolderIdResult.UserNotFound -> RequestErrors.NOT_FOUND "No user found by this id" next ctx
+      | Found rootId ->
+        match Entry.getLargestSubEntry entryRepo rootId with
+        | GetLargestSubEntryResult.DataRetrievingError msg ->
+          ServerErrors.INTERNAL_ERROR $"Error: Entry data could not be retrieved. %s{msg}" next ctx
+        | ZeroSubEntries ->
+          match Entry.findById entryRepo rootId with
+          | Entry.FindByIdResult.DataRetrievingError msg ->
+            ServerErrors.INTERNAL_ERROR $"Error: Entry data could not be retrieved. %s{msg}" next ctx
+          | EntryNotFound ->
+            ServerErrors.INTERNAL_ERROR
+              $"Error: User with id %d{UserId.toRaw userId} points to a nonexistent root folder!"
+              next
+              ctx
+          | EntryFound largestEntry ->
+            match Entry.getEntryPath entryRepo (Entry.getData largestEntry) with
+            | GetEntryPathResult.DataRetrievingError msg ->
+              ServerErrors.INTERNAL_ERROR $"Error: Entry data could not be retrieved. %s{msg}" next ctx
+            | GetEntryPathResult.NonexistentAncestorError id ->
+              ServerErrors.INTERNAL_ERROR
+                $"Error: Entry has a nonexistent ancestor of id %d{EntryId.toRaw id}!"
+                next
+                ctx
+            | GetEntryPathResult.PathCreated path -> Successful.OK (formatMsg (largestEntry, path)) next ctx
+        | GetLargestSubEntryResult.Found largestEntry ->
+          match Entry.getEntryPath entryRepo (Entry.getData largestEntry) with
+          | GetEntryPathResult.DataRetrievingError msg ->
+            ServerErrors.INTERNAL_ERROR $"Error: Entry data could not be retrieved. %s{msg}" next ctx
+          | GetEntryPathResult.NonexistentAncestorError id ->
+            ServerErrors.INTERNAL_ERROR $"Error: Entry has a nonexistent ancestor of id %d{EntryId.toRaw id}!" next ctx
+          | GetEntryPathResult.PathCreated path -> Successful.OK (formatMsg (largestEntry, path)) next ctx

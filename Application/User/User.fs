@@ -99,3 +99,14 @@ let getTotalBytesStoredByUserId userRepo entryRepo userId =
     | Entry.GetSubEntriesResult.DataRetrievingError msg -> EntryDataRetrievingError msg
     | Entry.GetSubEntriesResult.ZeroSubEntries -> ZeroEntries user
     | Entry.GetSubEntriesResult.SubEntriesFound entries -> TotalBytesCounted (user, Entry.sumEntryBytes entries)
+
+type GetUserRootFolderIdResult =
+  | UserDataRetrievingError of Message
+  | UserNotFound
+  | Found of EntryId
+
+let getUserRootFolderId userRepo userId : GetUserRootFolderIdResult =
+  match findById userRepo userId with
+  | FindByIdResult.DataRetrievingError msg -> UserDataRetrievingError msg
+  | NotFound -> UserNotFound
+  | FindByIdResult.Found user -> User.getRootFolderId user |> Found

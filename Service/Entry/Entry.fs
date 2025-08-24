@@ -43,7 +43,7 @@ let getAllEntriesOfUser (rawUserId: int) : HttpHandler =
         | FindByIdResult.DataRetrievingError msg ->
           return! ServerErrors.INTERNAL_ERROR $"Error: User data could not be retrieved. %s{msg}" next ctx
         | NotFound -> return! RequestErrors.NOT_FOUND "No user found by this id." next ctx
-        | Found user ->
+        | FindByIdResult.Found user ->
           let _, _, _, userRoot = User.toTuple user
           let userRootEntry = UserRoot.toRaw userRoot
           let response = buildEntryDTO entryRepo userRootEntry
