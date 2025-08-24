@@ -54,7 +54,7 @@ let getParent (entryRepo: IEntryRepository) (entryData: EntryData) =
     | FindByIdResult.EntryFound entry -> ParentFound entry
 
 let sumEntryBytes (entries: Entry list) : ByteCount =
-  entries |> List.sumBy Entry.size |> ByteCount
+  entries |> List.sumBy Entry.getSize |> ByteCount
 
 type GetLargestSubEntryResult =
   | Found of Entry
@@ -65,7 +65,43 @@ let getLargestSubEntry (entryRepo: IEntryRepository) entryId : GetLargestSubEntr
   match getSubEntries entryRepo entryId with
   | GetSubEntriesResult.DataRetrievingError msg -> DataRetrievingError msg
   | GetSubEntriesResult.ZeroSubEntries -> ZeroSubEntries
-  | GetSubEntriesResult.SubEntriesFound subEntries -> subEntries |> List.maxBy Entry.size |> Found
+  | GetSubEntriesResult.SubEntriesFound subEntries -> subEntries |> List.maxBy Entry.getSize |> Found
+
+type GetAncestorsResult =
+  | DataRetrievingError of Message
+  | HasNonexistentAncestor of EntryId
+  | NoParent
+  | Found of EntryData list
+
+let getAncestors (entryRepo: IEntryRepository) entryData =
+  let rec next (child, (bloodline: EntryData list)) =
+    match getParent entryRepo child with
+    | GetParentResult.DataRetrievingError s -> DataRetrievingError s
+    | NonexistentParent parentId -> HasNonexistentAncestor parentId
+    | GetParentResult.NoParent when List.isEmpty bloodline -> NoParent
+    | GetParentResult.NoParent -> Found bloodline
+    | ParentFound parent ->
+      let parentData = Entry.getData parent
+      next (parentData, List.insertAt 0 parentData bloodline)
+
+  next (entryData, [])
+
+type GetEntryPathResult =
+  | DataRetrievingError of Message
+  | NonexistentAncestorError of EntryId
+  | PathCreated of EntryPath
+
+let getEntryPath (entryRepo: IEntryRepository) entryData =
+  match getAncestors entryRepo entryData with
+  | GetAncestorsResult.DataRetrievingError msg -> DataRetrievingError msg
+  | HasNonexistentAncestor entryId -> NonexistentAncestorError entryId
+  | NoParent -> Entry.EntryData.getRawName entryData |> EntryPath |> PathCreated
+  | Found ancestors ->
+    ancestors
+    |> List.map (fun d -> Entry.EntryData.getRawName d)
+    |> String.concat "/"
+    |> EntryPath
+    |> PathCreated
 
 module Validation =
   let maxLegalAncestors = 6
@@ -107,7 +143,7 @@ module Validation =
     (match getParent entryRepo entry with
      | GetParentResult.DataRetrievingError msg -> Error msg
      | NonexistentParent _ -> Error "Entry may not point to a parent that doesn't exist."
-     | NoParent -> Ok entry
+     | GetParentResult.NoParent -> Ok entry
      | ParentFound parent ->
        let parentData = Entry.getData parent
        // Now the parent validations.
