@@ -2,12 +2,22 @@ module DrizzleCarton.RAMDataAccess.Entry
 
 open DrizzleCarton.Application
 open DrizzleCarton.Application.EntryRepositoryContract
+open DrizzleCarton.Application.ResultHelper
 open DrizzleCarton.Model
 open DrizzleCarton.RAMDataAccess
-open DrizzleCarton.ResultHelper
 
 let entryPersistence: IEntryRepository =
   { new IEntryRepository with
+      member this.StoreEntry(entryData: EntryData) : Result<EntryId, WriteEntryFailure> =
+        match RAMDataAccess.addEntry RAMDataAccess.defaultDb (Entry.EntryData.toRawTuple entryData) with
+        | Error _ -> Error(WriteEntryFailure.DataAccessError $"Unknown error while trying to store new Entry!")
+        | Ok entry ->
+          let rawId, _, _, _, _ = entry
+
+          EntryId.ofRaw rawId
+          |> Result.mapError (function
+            | Validation.ValidationError msg -> WriteEntryFailure.UnexpectedResultError msg)
+
       member this.GetSubEntries(id: EntryId) : Result<Entry list, ReadEntryFailure> =
         let rawId = EntryId.toRaw id
 
@@ -19,20 +29,15 @@ let entryPersistence: IEntryRepository =
           |> List.map Entry.ofRaw
           |> sequenceResult
           |> Result.mapError (function
-            | Validation.ValidationError e -> ModelValidationError e)
+            | Validation.ValidationError msg -> ReadEntryFailure.ModelValidationError msg)
 
       member this.FindEntryById(id: EntryId) : Result<Entry option, ReadEntryFailure> =
-        raise (System.NotImplementedException())
-
-      member this.GetAllEntries() : Result<Entry list, ReadEntryFailure> =
-        raise (System.NotImplementedException())
-
-      member this.StoreEntry
-        (name: EntryName, parent: EntryParent, kind: EntryKind, size: EntrySize)
-        : Result<Entry, WriteEntryFailure> =
-        raise (System.NotImplementedException())
-
-      member this.UpdateEntry(entry: Entry) : Result<Entry, WriteEntryFailure> =
-        raise (System.NotImplementedException())
+        match RAMDataAccess.entry RAMDataAccess.defaultDb (EntryId.toRaw id) with
+        | Error(NotFound _) -> Ok None
+        | Ok rawEntry ->
+          Entry.ofRaw rawEntry
+          |> Result.map (fun e -> Some e)
+          |> Result.mapError (function
+            | Validation.ValidationError msg -> ReadEntryFailure.ModelValidationError msg)
 
   }
