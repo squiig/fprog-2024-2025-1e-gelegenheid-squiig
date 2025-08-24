@@ -121,7 +121,7 @@ let create (entryRepo: IEntryRepository) entryData =
     | Error(WriteEntryFailure.DataAccessError msg) -> DataStoringError msg
     | Error(WriteEntryFailure.PermissionDenied) -> DataStoringError "Permission denied."
     | Error(WriteEntryFailure.UnexpectedResultError msg) ->
-      DataStoringError $"Encountered unexpected result after storing new root folder: %s{msg}"
+      DataStoringError $"Encountered unexpected result after storing new entry: %s{msg}"
     | Ok storedEntryId -> Entry.withId validatedEntryData storedEntryId |> Stored
 
 let storeNewRootFolder (entryRepo: IEntryRepository) =
