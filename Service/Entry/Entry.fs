@@ -26,7 +26,7 @@ let rec private buildEntryDTO (entryRepo: IEntryRepository) (entry: Entry) : Nes
     { Entry = entryDTO
       SubEntries = subEntries |> List.map (buildEntryDTO entryRepo) |> Some }
     |> Some
-  | ZeroSubEntries -> { Entry = entryDTO; SubEntries = None } |> Some
+  | GetSubEntriesResult.ZeroSubEntries -> { Entry = entryDTO; SubEntries = None } |> Some
   | GetSubEntriesResult.DataRetrievingError _ -> None
 
 let getAllEntriesOfUser (rawUserId: int) : HttpHandler =

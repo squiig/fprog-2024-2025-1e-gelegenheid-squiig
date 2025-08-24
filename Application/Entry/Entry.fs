@@ -53,6 +53,20 @@ let getParent (entryRepo: IEntryRepository) (entryData: EntryData) =
     | FindByIdResult.EntryNotFound -> NonexistentParent id
     | FindByIdResult.EntryFound entry -> ParentFound entry
 
+let sumEntryBytes (entries: Entry list) : ByteCount =
+  entries |> List.sumBy Entry.size |> ByteCount
+
+type GetLargestSubEntryResult =
+  | Found of Entry
+  | ZeroSubEntries
+  | DataRetrievingError of Message
+
+let getLargestSubEntry (entryRepo: IEntryRepository) entryId : GetLargestSubEntryResult =
+  match getSubEntries entryRepo entryId with
+  | GetSubEntriesResult.DataRetrievingError msg -> DataRetrievingError msg
+  | GetSubEntriesResult.ZeroSubEntries -> ZeroSubEntries
+  | GetSubEntriesResult.SubEntriesFound subEntries -> subEntries |> List.maxBy Entry.size |> Found
+
 module Validation =
   let maxLegalAncestors = 6
 
@@ -136,6 +150,3 @@ let createSubFolder entryRepo name parentFolder =
   match Entry.EntryData.make (name, parentFolder, EntryKind.Folder, EntrySize.zero) with
   | Error(Validation.ValidationError msg) -> CreateResult.InvalidEntryError msg
   | Ok folderData -> create entryRepo folderData
-
-let sumEntryBytes (entries: Entry list) : ByteCount =
-  entries |> List.sumBy Entry.size |> ByteCount
