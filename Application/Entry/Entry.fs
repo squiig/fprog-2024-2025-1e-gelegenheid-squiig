@@ -129,3 +129,8 @@ let storeNewRootFolder (entryRepo: IEntryRepository) =
 
   entryRepo.StoreEntry data
   |> Result.map (fun storedEntryId -> Entry.withId data storedEntryId)
+
+let createSubFolder entryRepo name parentFolder =
+  match Entry.EntryData.make (name, parentFolder, EntryKind.Folder, EntrySize.zero) with
+  | Error(Validation.ValidationError msg) -> CreateResult.InvalidEntryError msg
+  | Ok folderData -> create entryRepo folderData
