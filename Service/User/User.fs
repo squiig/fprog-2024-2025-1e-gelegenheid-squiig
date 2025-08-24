@@ -42,9 +42,9 @@ let renameUser (rawId: int) : HttpHandler =
       | Error e -> return! RequestErrors.BAD_REQUEST (sprintf "%A" e) next ctx
       | Ok decodedName ->
         match User.rename userRepo rawId decodedName with
-        | RenameResult.DataReadingError msg ->
+        | RenameResult.DataRetrievingError msg ->
           return! ServerErrors.INTERNAL_ERROR $"Error: User data could not be retrieved. %s{msg}" next ctx
-        | RenameResult.DataWritingError msg ->
+        | RenameResult.DataStoringError msg ->
           return! ServerErrors.INTERNAL_ERROR $"Error: User could not be updated. %s{msg}" next ctx
         | RenameResult.InvalidIdError msg ->
           return! RequestErrors.UNPROCESSABLE_ENTITY $"Provided user id is not valid! %s{msg}" next ctx

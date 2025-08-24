@@ -100,6 +100,9 @@ module UserData =
 
   let toTuple (data: UserData) = data.Name, data.Quota, data.RootFolder
 
+  let toRawTuple data =
+    UserName.toRaw data.Name, UserQuota.toRaw data.Quota, UserRoot.toRaw data.RootFolder |> Entry.getId |> EntryId.toRaw
+
 [<RequireQualifiedAccess>]
 module User =
 

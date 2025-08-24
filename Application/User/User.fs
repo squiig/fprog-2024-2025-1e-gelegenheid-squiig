@@ -51,12 +51,14 @@ let add (userRepo: IUserRepository) (entryRepo: IEntryRepository) (rawUserName, 
       // Try to store the user data.
       match userRepo.StoreUser userData with
       | Error(WriteUserFailure.DataAccessError msg) -> UserDataStoringError msg
+      | Error(WriteUserFailure.UnexpectedResultError msg) -> 
+        UserDataStoringError $"Encountered unexpected result after storing new user data: %s{msg}"
       // If stored, assign the new id to the user data and return as a valid and stored User entity.
       | Ok storedUserId -> User.withId userData storedUserId |> Stored
 
 type RenameResult =
-  | DataReadingError of Message
-  | DataWritingError of Message
+  | DataRetrievingError of Message
+  | DataStoringError of Message
   | InvalidIdError of Message
   | InvalidNameError of Message
   | InvalidNameForUserError of Message
@@ -65,7 +67,7 @@ type RenameResult =
 
 let rename (userRepo: IUserRepository) rawId rawNewName =
   match findById userRepo rawId with
-  | FindByIdResult.DataRetrievingError msg -> DataReadingError msg
+  | FindByIdResult.DataRetrievingError msg -> DataRetrievingError msg
   | FindByIdResult.InvalidIdError msg -> InvalidIdError msg
   | FindByIdResult.NotFound -> UserNotFoundError
   | FindByIdResult.Found oldUser ->
@@ -78,5 +80,7 @@ let rename (userRepo: IUserRepository) rawId rawNewName =
       | Error(Validation.ValidationError msg) -> InvalidNameForUserError msg
       | Ok dirtyUser ->
         match userRepo.UpdateUser dirtyUser with
-        | Error(WriteUserFailure.DataAccessError msg) -> DataWritingError msg
+        | Error(WriteUserFailure.DataAccessError msg) -> DataStoringError msg
+        | Error(WriteUserFailure.UnexpectedResultError msg) -> 
+        DataStoringError $"Encountered unexpected result after updating user: %s{msg}"
         | Ok updatedUser -> UserUpdated updatedUser

@@ -43,7 +43,15 @@ let userPersistence: IUserRepository =
         | Ok rawUsers -> rawUsers |> List.map (mapUser db) |> sequenceResult
 
       member this.StoreUser(userData: UserData) : Result<UserId, WriteUserFailure> =
-        raise (System.NotImplementedException())
+        let db = RAMDataAccess.defaultDb
+        match RAMDataAccess.addUser db (UserData.toRawTuple userData) with
+        | Error _ -> Error(WriteUserFailure.DataAccessError $"Unknown error while trying to store new User!")
+        | Ok rawUser ->
+          let rawId, _, _, _ = rawUser
+
+          UserId.ofRaw rawId
+          |> Result.mapError (function
+            | Validation.ValidationError msg -> WriteUserFailure.UnexpectedResultError msg)
 
       member this.UpdateUser(dirtyUser: User) : Result<User, WriteUserFailure> =
         raise (System.NotImplementedException())

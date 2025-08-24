@@ -9,7 +9,9 @@ type ReadUserFailure =
   | DataAccessError of Message
 
 /// Any error that may come from the data access implementation when attempting to write Users.
-type WriteUserFailure = DataAccessError of Message
+type WriteUserFailure =
+  | DataAccessError of Message
+  | UnexpectedResultError of Message
 
 /// Defines the data operations for User functionality to be implemented by some data access dependency.
 type IUserRepository =

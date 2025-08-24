@@ -36,7 +36,7 @@ let getAllEntriesOfUser (rawUserId: int) : HttpHandler =
       let userRepo = ctx.GetService<IUserRepository>()
 
       match User.findById userRepo rawUserId with
-      | DataRetrievingError msg ->
+      | FindByIdResult.DataRetrievingError msg ->
         return! ServerErrors.INTERNAL_ERROR $"Error: User data could not be retrieved. %s{msg}" next ctx
       | FindByIdResult.InvalidIdError msg ->
         return! RequestErrors.UNPROCESSABLE_ENTITY $"Provided user id is not valid! %s{msg}" next ctx
