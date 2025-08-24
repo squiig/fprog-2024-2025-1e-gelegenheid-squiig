@@ -40,6 +40,9 @@ type AddResult =
 let add (userRepo: IUserRepository) (entryRepo: IEntryRepository) (rawUserName, rawUserQuota) =
   match Entry.storeNewRootFolder entryRepo with
   | Error(WriteEntryFailure.DataAccessError msg) -> RootFolderStoringError msg
+  | Error(WriteEntryFailure.PermissionDenied) -> RootFolderStoringError "Permission denied."
+  | Error(WriteEntryFailure.UnexpectedResultError msg) ->
+    RootFolderStoringError $"Encountered unexpected result after storing new root folder: %s{msg}"
   | Ok rootFolder ->
     // Try to combine everything into valid user data.
     match UserData.ofRaw (rawUserName, rawUserQuota, rootFolder) with
