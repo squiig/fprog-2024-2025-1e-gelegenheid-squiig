@@ -5,9 +5,12 @@ open Microsoft.Extensions.DependencyInjection
 
 open Giraffe
 
+open DrizzleCarton
 open DrizzleCarton.Application
-open DrizzleCarton.RAMDataAccess
+open DrizzleCarton.Application.EntryRepositoryContract
+open DrizzleCarton.Application.UserRepositoryContract
 open DrizzleCarton.HTTPWebService
+open DrizzleCarton.RAMDataAccess
 
 let report<'T> (result: Result<'T, RAMDataAccess.RAMDataAccessError>) =
   match result with
@@ -30,9 +33,8 @@ let configureApp (app: IApplicationBuilder) = app.UseGiraffe webApp
 
 let configureServices (services: IServiceCollection) =
   // Add Giraffe dependencies
-  //services.AddSingleton<RAMDataAccess>(RAMDataAccess.connect ()) |> ignore
-  services.AddSingleton<IUserDataAccess>(User.userPersistence) |> ignore
-  services.AddSingleton<IEntryDataAccess>(Entry.entryPersistence) |> ignore
+  services.AddSingleton<IUserRepository>(User.userPersistence) |> ignore
+  services.AddSingleton<IEntryRepository>(Entry.entryPersistence) |> ignore
   services.AddGiraffe() |> ignore
 
 [<EntryPoint>]
