@@ -21,21 +21,6 @@ let private findById (entryRepo: IEntryRepository) id =
   | Ok(Some entry) -> EntryFound entry
   | Ok None -> EntryNotFound
 
-type FindByRawIdResult =
-  | EntryFound of Entry
-  | EntryNotFound
-  | InvalidIdError of Message
-  | DataRetrievingError of Message
-
-let findByRawId (entryRepo: IEntryRepository) rawId =
-  match EntryId.ofRaw rawId with
-  | Error(Validation.ValidationError msg) -> InvalidIdError msg
-  | Ok id ->
-    match findById entryRepo id with
-    | FindByIdResult.DataRetrievingError msg -> DataRetrievingError msg
-    | FindByIdResult.EntryNotFound -> EntryNotFound
-    | FindByIdResult.EntryFound entry -> EntryFound entry
-
 type GetSubEntriesResult =
   | SubEntriesFound of Entry list
   | ZeroSubEntries
