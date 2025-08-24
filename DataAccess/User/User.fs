@@ -27,8 +27,6 @@ let mapUser db rawUser =
 
 let userPersistence: IUserRepository =
   { new IUserRepository with
-      member this.GetTotalBytesStored(userId: UserId) : Result<ByteCount, ReadUserFailure> =
-        raise (System.NotImplementedException())
 
       member this.FindUserById(userId: UserId) : Result<User option, ReadUserFailure> =
         let db = RAMDataAccess.defaultDb
