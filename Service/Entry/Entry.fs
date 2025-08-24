@@ -10,13 +10,13 @@ open DrizzleCarton.Model.Validation
 
 open Giraffe
 
-type EntryDTO = int * string * int option * string * int
+type private EntryDTO = int * string * int option * string * int
 
-type NestedEntriesDTO =
+type private NestedEntriesDTO =
   { Entry: EntryDTO
     SubEntries: NestedEntriesDTO option list option }
 
-let rec buildEntryDTO (entryRepo: IEntryRepository) (entry: Entry) : NestedEntriesDTO option =
+let rec private buildEntryDTO (entryRepo: IEntryRepository) (entry: Entry) : NestedEntriesDTO option =
   let entryDTO = Entry.toRawTuple entry
 
   match getSubEntries entryRepo (Entry.getId entry) with
