@@ -114,3 +114,10 @@ let getTotalBytesStoredByUser (rawUserId: int) : HttpHandler =
       | GetTotalBytesResult.UserNotFound -> RequestErrors.NOT_FOUND "No user found by this id" next ctx
       | ZeroEntries user -> Successful.OK (formatMsg (User.rawName user, 0)) next ctx
       | TotalBytesCounted(user, (ByteCount count)) -> Successful.OK (formatMsg (User.rawName user, count)) next ctx
+
+let getLargestEntry (rawUserId: int) : HttpHandler =
+  fun next ctx ->
+    let userRepo = ctx.GetService<IUserRepository>()
+    let entryRepo = ctx.GetService<IEntryRepository>()
+
+    failwith "todo"
