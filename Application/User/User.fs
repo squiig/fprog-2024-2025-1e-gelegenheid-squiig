@@ -81,20 +81,21 @@ let rename (userRepo: IUserRepository) (id: UserId) (newName: UserName) =
       | Ok updatedUser -> UserUpdated updatedUser
 
 type GetTotalBytesResult =
-  | DataRetrievingError of Message
+  | UserDataRetrievingError of Message
+  | EntryDataRetrievingError of Message
   | UserNotFound
   | ZeroEntries
   | TotalBytesCounted of ByteCount
 
 let getTotalBytesStoredByUserId userRepo entryRepo userId =
   match findById userRepo userId with
-  | FindByIdResult.DataRetrievingError msg -> DataRetrievingError msg
+  | FindByIdResult.DataRetrievingError msg -> UserDataRetrievingError msg
   | NotFound -> UserNotFound
   | Found user ->
     let _, _, _, userRoot = User.toTuple user
     let rootEntry = UserRoot.toRaw userRoot
 
     match Entry.getSubEntries entryRepo (Entry.getId rootEntry) with
-    | Entry.GetSubEntriesResult.DataRetrievingError msg -> DataRetrievingError msg
+    | Entry.GetSubEntriesResult.DataRetrievingError msg -> EntryDataRetrievingError msg
     | Entry.GetSubEntriesResult.ZeroSubEntries -> ZeroEntries
     | Entry.GetSubEntriesResult.SubEntriesFound entries -> Entry.sumEntryBytes entries |> TotalBytesCounted
