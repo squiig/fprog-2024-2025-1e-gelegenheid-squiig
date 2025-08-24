@@ -205,3 +205,5 @@ module Entry =
     EntryParent.toRaw entry.Data.Parent |> Option.map EntryId.toRaw,
     EntryKind.toRaw entry.Data.Kind,
     EntrySize.toRaw entry.Data.Size
+
+  let size entry = EntrySize.toRaw entry.Data.Size
