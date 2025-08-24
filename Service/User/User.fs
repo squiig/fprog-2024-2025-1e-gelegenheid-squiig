@@ -64,7 +64,7 @@ let renameUser (rawId: int) : HttpHandler =
               return!
                 RequestErrors.UNPROCESSABLE_ENTITY $"Error: Provided name is not valid for this user! %s{msg}" next ctx
             | RenameResult.UserNotFoundError -> return! RequestErrors.NOT_FOUND "No user found by this id" next ctx
-            | RenameResult.UserUpdated updatedUser -> return! json updatedUser next ctx
+            | RenameResult.UserUpdated updatedUser -> return! Successful.OK (json updatedUser) next ctx
     }
 
 type CreateUserRequestDTO = { Name: string; Quota: int }
@@ -94,5 +94,5 @@ let createUser: HttpHandler =
               return! ServerErrors.INTERNAL_ERROR $"Error: Could not store root folder for new user. %s{msg}" next ctx
             | InvalidUserError msg ->
               return! RequestErrors.UNPROCESSABLE_ENTITY $"Could not create user, input data invalid! %s{msg}" next ctx
-            | Stored user -> return! json user next ctx
+            | Stored user -> return! Successful.CREATED (json user) next ctx
     }
