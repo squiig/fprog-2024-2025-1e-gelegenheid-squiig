@@ -1,4 +1,4 @@
-module DrizzleCarton.ResultHelper
+module DrizzleCarton.Application.ResultHelper
 
 let sequenceResult (results: Result<'a, 'e> list) : Result<'a list, 'e> =
   let folder accumulator next =

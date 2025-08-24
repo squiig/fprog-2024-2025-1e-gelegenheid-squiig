@@ -6,7 +6,6 @@
   </PropertyGroup>
 
   <ItemGroup>
-    <Compile Include="ResultHelper.fs" />
     <Compile Include="RAMDataAccess.fs" />
     <Compile Include="Entry\Entry.fs" />
     <Compile Include="User\User.fs" />

@@ -6,6 +6,7 @@
   </PropertyGroup>
 
   <ItemGroup>
+    <Compile Include="ResultHelper.fs" />
     <Compile Include="Common.fs" />
     <Compile Include="Entry\RepositoryContract.fs" />
     <Compile Include="Entry\Entry.fs" />
