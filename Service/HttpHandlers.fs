@@ -6,7 +6,7 @@ open Giraffe
 /// This handler is then used to "run" Giraffe in the main function of the back-end.
 let webApp: HttpHandler =
   choose
-    [ route "/user" >=> User.getAllUsers
+    [ GET >=> route "/user" >=> User.getAllUsers
 
       GET >=> routef "/user/%i" User.getUser
 
@@ -14,4 +14,6 @@ let webApp: HttpHandler =
 
       GET >=> routef "/user/%i/file" Entry.getAllEntriesOfUser
 
-      POST >=> route "/entry/folder" >=> Entry.createSubFolder ]
+      POST >=> route "/entry/folder" >=> Entry.createSubFolder
+
+      POST >=> route "/user" >=> User.createUser ]
