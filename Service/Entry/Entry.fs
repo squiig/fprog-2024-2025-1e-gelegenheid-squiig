@@ -5,6 +5,7 @@ open DrizzleCarton.Application.Entry
 open DrizzleCarton.Application.EntryRepositoryContract
 open DrizzleCarton.Application.User
 open DrizzleCarton.Application.UserRepositoryContract
+open DrizzleCarton.HTTPWebService.Serialization
 open DrizzleCarton.Model
 open DrizzleCarton.Model.Validation
 
@@ -47,7 +48,7 @@ let getAllEntriesOfUser (rawUserId: int) : HttpHandler =
           let _, _, _, userRoot = User.toTuple user
           let userRootEntry = UserRoot.toRaw userRoot
           let response = buildEntryDTO entryRepo userRootEntry
-          return! json response next ctx
+          return! Serialization.json response next ctx
     }
 
 type CreateSubFolderRequestDTO = { Name: string; ParentFolderId: int }
@@ -76,5 +77,5 @@ let createSubFolder: HttpHandler =
                 $"Could not create folder, combination of input data invalid! %s{msg}"
                 next
                 ctx
-          | CreateResult.Stored folder -> return! Successful.CREATED (json folder) next ctx
+          | CreateResult.Stored folder -> return! Successful.CREATED (Serialization.json folder) next ctx
     }

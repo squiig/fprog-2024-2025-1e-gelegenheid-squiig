@@ -1,12 +1,13 @@
 module DrizzleCarton.HTTPWebService.User
 
-open DrizzleCarton.Model
 open DrizzleCarton.Application
 open DrizzleCarton.Application.Common
 open DrizzleCarton.Application.Entry
 open DrizzleCarton.Application.EntryRepositoryContract
 open DrizzleCarton.Application.User
 open DrizzleCarton.Application.UserRepositoryContract
+open DrizzleCarton.Model
+open DrizzleCarton.HTTPWebService.Serialization
 
 open Giraffe
 
@@ -24,7 +25,7 @@ let getAllUsers: HttpHandler =
     match getAll userRepo with
     | GetAllResult.DataRetrievingError msg ->
       ServerErrors.INTERNAL_ERROR $"Error: User data could not be retrieved. %s{msg}" next ctx
-    | GetAllResult.Found users -> json users next ctx
+    | GetAllResult.Found users -> Serialization.json users next ctx
 
 let getUser (rawId: int) : HttpHandler =
   fun next ctx ->
@@ -37,7 +38,7 @@ let getUser (rawId: int) : HttpHandler =
       | FindByIdResult.DataRetrievingError msg ->
         ServerErrors.INTERNAL_ERROR $"Error: User data could not be retrieved. %s{msg}" next ctx
       | FindByIdResult.NotFound -> RequestErrors.NOT_FOUND "No user found by this id." next ctx
-      | FindByIdResult.Found user -> json user next ctx
+      | FindByIdResult.Found user -> Serialization.json user next ctx
 
 let renameUser (rawId: int) : HttpHandler =
   fun next ctx ->
@@ -64,7 +65,7 @@ let renameUser (rawId: int) : HttpHandler =
               return!
                 RequestErrors.UNPROCESSABLE_ENTITY $"Error: Provided name is not valid for this user! %s{msg}" next ctx
             | RenameResult.UserNotFoundError -> return! RequestErrors.NOT_FOUND "No user found by this id" next ctx
-            | RenameResult.UserUpdated updatedUser -> return! Successful.OK (json updatedUser) next ctx
+            | RenameResult.UserUpdated updatedUser -> return! Successful.OK (Serialization.json updatedUser) next ctx
     }
 
 type CreateUserRequestDTO = { Name: string; Quota: int }
@@ -91,7 +92,7 @@ let createUser: HttpHandler =
             return! ServerErrors.INTERNAL_ERROR $"Error: Could not store root folder for new user. %s{msg}" next ctx
           | InvalidUserError msg ->
             return! RequestErrors.UNPROCESSABLE_ENTITY $"Could not create user, input data invalid! %s{msg}" next ctx
-          | Stored user -> return! Successful.CREATED (json user) next ctx
+          | Stored user -> return! Successful.CREATED (Serialization.json user) next ctx
     }
 
 let getTotalBytesStoredByUser (rawUserId: int) : HttpHandler =

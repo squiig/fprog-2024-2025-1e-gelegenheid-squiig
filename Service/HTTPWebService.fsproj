@@ -6,9 +6,9 @@
 	</PropertyGroup>
 
 	<ItemGroup>
+		<Compile Include="Serialization.fs" />
 		<Compile Include="Entry\Entry.fs" />
 		<Compile Include="User\User.fs" />
-		<Compile Include="Serialization.fs" />
 		<Compile Include="HttpHandlers.fs" />
 	</ItemGroup>
 
