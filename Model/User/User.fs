@@ -111,5 +111,11 @@ module User =
     UserData.make (name, quota, rootFolder)
     |> Result.map (fun data -> withId data id)
 
+  let ofRaw (rawId, rawName, rawQuota, rawRoot) =
+    UserId.ofRaw rawId
+    |> Result.bind (fun userId ->
+      UserData.ofRaw (rawName, rawQuota, rawRoot)
+      |> Result.map (fun userData -> withId userData userId))
+
   let toTuple (user: User) =
     user.Id, user.Data.Name, user.Data.Quota, user.Data.RootFolder
