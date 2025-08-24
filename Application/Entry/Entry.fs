@@ -56,12 +56,14 @@ let getParent (entryRepo: IEntryRepository) (entryData: EntryData) =
 module Validation =
   let maxLegalAncestors = 6
 
+  type AncestorCount = int
+
   type CountAncestorsResult =
-    | AncestorCount of int
+    | AncestorCount of AncestorCount
     | ZeroAncestors
     | HasNonexistentAncestor of
       {| AncestorId: EntryId
-         CountUntilAncestorExcluded: int |}
+         CountUntilAncestorExcluded: AncestorCount |}
     | DataRetrievingError of Message
 
   let countAncestors (entryRepo: IEntryRepository) (entryData: EntryData) : CountAncestorsResult =
