@@ -49,8 +49,13 @@ module UserName =
 
 [<RequireQualifiedAccess>]
 module UserQuota =
-  let min = 1024 * 1024 // 1 megabyte
-  let max = 2 <<< 30 // 1 gigabyte
+  module Sizes =
+    let KB = 1024
+    let MB = 1024 * KB
+    let GB = 1024 * MB
+
+  let min = Sizes.MB // 1 megabyte
+  let max = Sizes.GB // 1 gigabyte
 
   let validate quota =
     quota
