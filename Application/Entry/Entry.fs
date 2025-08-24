@@ -81,18 +81,18 @@ module Validation =
     | DataRetrievingError of Message
 
   let countAncestors (entryRepo: IEntryRepository) (entryData: EntryData) : CountAncestorsResult =
-    let rec count (counter: int) =
-      match getParent entryRepo entryData with
+    let rec count (child, (counter: int)) =
+      match getParent entryRepo child with
       | GetParentResult.DataRetrievingError s -> DataRetrievingError s
       | NonexistentParent parentId ->
         HasNonexistentAncestor
           {| AncestorId = parentId
              CountUntilAncestorExcluded = counter |}
-      | NoParent when counter = 0 -> ZeroAncestors
-      | NoParent -> AncestorCount counter
-      | ParentFound _ -> count (counter + 1)
+      | GetParentResult.NoParent when counter = 0 -> ZeroAncestors
+      | GetParentResult.NoParent -> AncestorCount counter
+      | ParentFound parent -> count (Entry.getData parent, counter + 1)
 
-    count (0)
+    count (entryData, 0)
 
   let legalAncestorCount (entryRepo: IEntryRepository) invalid maxAncestorCount (entryData: EntryData) =
     match countAncestors entryRepo entryData with
