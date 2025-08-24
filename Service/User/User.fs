@@ -74,25 +74,22 @@ let createUser: HttpHandler =
     task {
       let userRepo = ctx.GetService<IUserRepository>()
       let entryRepo = ctx.GetService<IEntryRepository>()
-      let! data = ctx.ReadBodyBufferedFromRequestAsync()
+      let! userDTO = ctx.BindJsonAsync<CreateUserRequestDTO>()
 
-      match Decode.Auto.fromString<CreateUserRequestDTO> data with
-      | Error e -> return! RequestErrors.BAD_REQUEST (sprintf "%s" e) next ctx
-      | Ok userDTO ->
-        match UserName.ofRaw userDTO.Name with
+      match UserName.ofRaw userDTO.Name with
+      | Error(Validation.ValidationError msg) ->
+        return! RequestErrors.UNPROCESSABLE_ENTITY $"Could not create user, username invalid! %s{msg}" next ctx
+      | Ok userName ->
+        match UserQuota.ofRaw userDTO.Quota with
         | Error(Validation.ValidationError msg) ->
-          return! RequestErrors.UNPROCESSABLE_ENTITY $"Could not create user, username invalid! %s{msg}" next ctx
-        | Ok userName ->
-          match UserQuota.ofRaw userDTO.Quota with
-          | Error(Validation.ValidationError msg) ->
-            return! RequestErrors.UNPROCESSABLE_ENTITY $"Could not create user, quota invalid! %s{msg}" next ctx
-          | Ok userQuota ->
-            match User.add userRepo entryRepo (userName, userQuota) with
-            | UserDataStoringError msg ->
-              return! ServerErrors.INTERNAL_ERROR $"Error: Could not store user data. %s{msg}" next ctx
-            | RootFolderStoringError msg ->
-              return! ServerErrors.INTERNAL_ERROR $"Error: Could not store root folder for new user. %s{msg}" next ctx
-            | InvalidUserError msg ->
-              return! RequestErrors.UNPROCESSABLE_ENTITY $"Could not create user, input data invalid! %s{msg}" next ctx
-            | Stored user -> return! Successful.CREATED (json user) next ctx
+          return! RequestErrors.UNPROCESSABLE_ENTITY $"Could not create user, quota invalid! %s{msg}" next ctx
+        | Ok userQuota ->
+          match User.add userRepo entryRepo (userName, userQuota) with
+          | UserDataStoringError msg ->
+            return! ServerErrors.INTERNAL_ERROR $"Error: Could not store user data. %s{msg}" next ctx
+          | RootFolderStoringError msg ->
+            return! ServerErrors.INTERNAL_ERROR $"Error: Could not store root folder for new user. %s{msg}" next ctx
+          | InvalidUserError msg ->
+            return! RequestErrors.UNPROCESSABLE_ENTITY $"Could not create user, input data invalid! %s{msg}" next ctx
+          | Stored user -> return! Successful.CREATED (json user) next ctx
     }
