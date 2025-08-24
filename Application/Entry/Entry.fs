@@ -24,21 +24,17 @@ let private findById (entryRepo: IEntryRepository) id =
 type GetSubEntriesResult =
   | SubEntriesFound of Entry list
   | ZeroSubEntries
-  | InvalidIdError of Message
   | DataRetrievingError of Message
 
-let getSubEntries (entryRepo: IEntryRepository) rawId : GetSubEntriesResult =
-  match EntryId.ofRaw rawId with
-  | Error(Validation.ValidationError msg) -> InvalidIdError msg
-  | Ok id ->
-    match entryRepo.GetSubEntries id with
-    | Error(ReadEntryFailure.DataAccessError msg) -> DataRetrievingError msg
-    | Error(ReadEntryFailure.ModelValidationError msg) ->
-      DataRetrievingError
-        $"Error: One or more of the sub-entries of entry with id %d{rawId} could not be validated when read from storage! Details: '%s{msg}'"
-    | Error(ReadEntryFailure.PermissionDenied) -> DataRetrievingError "Permission denied."
-    | Ok subEntries when subEntries.IsEmpty -> ZeroSubEntries
-    | Ok subEntries -> SubEntriesFound subEntries
+let getSubEntries (entryRepo: IEntryRepository) entryId : GetSubEntriesResult =
+  match entryRepo.GetSubEntries entryId with
+  | Error(ReadEntryFailure.DataAccessError msg) -> DataRetrievingError msg
+  | Error(ReadEntryFailure.ModelValidationError msg) ->
+    DataRetrievingError
+      $"Error: One or more of the sub-entries of entry with id %d{EntryId.toRaw entryId} could not be validated when read from storage! Details: '%s{msg}'"
+  | Error(ReadEntryFailure.PermissionDenied) -> DataRetrievingError "Permission denied."
+  | Ok subEntries when subEntries.IsEmpty -> ZeroSubEntries
+  | Ok subEntries -> SubEntriesFound subEntries
 
 type GetParentResult =
   | ParentFound of Entry
@@ -117,19 +113,16 @@ type CreateResult =
   | InvalidEntryError of Message
   | Stored of Entry
 
-let create (entryRepo: IEntryRepository) (name, parent, kind, size) =
-  match Entry.EntryData.ofRaw (name, parent, kind, size) with
-  | Error(Validation.ValidationError msg) -> InvalidEntryError msg
-  | Ok entryData ->
-    match Validation.validate entryRepo entryData with
-    | Error(Common.ValidationError msg) -> InvalidEntryError msg
-    | Ok validatedEntryData ->
-      match entryRepo.StoreEntry validatedEntryData with
-      | Error(WriteEntryFailure.DataAccessError msg) -> DataStoringError msg
-      | Error(WriteEntryFailure.PermissionDenied) -> DataStoringError "Permission denied."
-      | Error(WriteEntryFailure.UnexpectedResultError msg) ->
-        DataStoringError $"Encountered unexpected result after storing new root folder: %s{msg}"
-      | Ok storedEntryId -> Entry.withId validatedEntryData storedEntryId |> Stored
+let create (entryRepo: IEntryRepository) entryData =
+  match Validation.validate entryRepo entryData with
+  | Error(Common.ValidationError msg) -> InvalidEntryError msg
+  | Ok validatedEntryData ->
+    match entryRepo.StoreEntry validatedEntryData with
+    | Error(WriteEntryFailure.DataAccessError msg) -> DataStoringError msg
+    | Error(WriteEntryFailure.PermissionDenied) -> DataStoringError "Permission denied."
+    | Error(WriteEntryFailure.UnexpectedResultError msg) ->
+      DataStoringError $"Encountered unexpected result after storing new root folder: %s{msg}"
+    | Ok storedEntryId -> Entry.withId validatedEntryData storedEntryId |> Stored
 
 let storeNewRootFolder (entryRepo: IEntryRepository) =
   let data = Entry.EntryData.root

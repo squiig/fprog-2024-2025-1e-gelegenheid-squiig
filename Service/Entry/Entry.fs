@@ -18,15 +18,13 @@ type NestedEntriesDTO =
 
 let rec buildEntryDTO (entryRepo: IEntryRepository) (entry: Entry) : NestedEntriesDTO option =
   let entryDTO = Entry.toRawTuple entry
-  let rawId, _, _, _, _ = entryDTO
 
-  match getSubEntries entryRepo rawId with
+  match getSubEntries entryRepo (Entry.getId entry) with
   | SubEntriesFound subEntries ->
     { Entry = entryDTO
       SubEntries = subEntries |> List.map (buildEntryDTO entryRepo) |> Some }
     |> Some
   | ZeroSubEntries -> { Entry = entryDTO; SubEntries = None } |> Some
-  | GetSubEntriesResult.InvalidIdError _ -> None
   | GetSubEntriesResult.DataRetrievingError _ -> None
 
 let getAllEntriesOfUser (rawUserId: int) : HttpHandler =
