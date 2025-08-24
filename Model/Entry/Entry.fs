@@ -172,6 +172,12 @@ module Entry =
     let toTuple data =
       data.Name, data.Parent, data.Kind, data.Size
 
+    let toRawTuple data =
+      EntryName.toRaw data.Name,
+      EntryParent.toRaw data.Parent |> Option.map EntryId.toRaw,
+      EntryKind.toRaw data.Kind,
+      EntrySize.toRaw data.Size
+
   let getData entry = entry.Data
 
   let withId (data: EntryData) (id: EntryId) = { Id = id; Data = data }
@@ -179,6 +185,12 @@ module Entry =
   let make (id, name, parent, kind, size) =
     EntryData.make (name, parent, kind, size)
     |> Result.map (fun data -> withId data id)
+
+  let ofRaw (rawId, rawName, rawParent, rawKind, rawSize) =
+    EntryId.ofRaw rawId
+    |> Result.bind (fun entryId ->
+      EntryData.ofRaw (rawName, rawParent, rawKind, rawSize)
+      |> Result.map (fun entryData -> withId entryData entryId))
 
   let toTuple (entry: Entry) =
     entry.Id, entry.Data.Name, entry.Data.Parent, entry.Data.Kind, entry.Data.Size
