@@ -93,3 +93,6 @@ let createUser: HttpHandler =
             return! RequestErrors.UNPROCESSABLE_ENTITY $"Could not create user, input data invalid! %s{msg}" next ctx
           | Stored user -> return! Successful.CREATED (json user) next ctx
     }
+
+let getTotalBytesStoredByUser (rawUserId: int) : HttpHandler =
+  failwith "todo"

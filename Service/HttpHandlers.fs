@@ -16,4 +16,6 @@ let webApp: HttpHandler =
 
       POST >=> route "/entry/folder" >=> Entry.createSubFolder
 
-      POST >=> route "/user" >=> User.createUser ]
+      POST >=> route "/user" >=> User.createUser
+
+      GET >=> routef "user/%i/bytes" User.getTotalBytesStoredByUser ]
