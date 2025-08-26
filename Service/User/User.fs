@@ -65,7 +65,7 @@ let renameUser (rawId: int) : HttpHandler =
               return!
                 RequestErrors.UNPROCESSABLE_ENTITY $"Error: Provided name is not valid for this user! %s{msg}" next ctx
             | RenameResult.UserNotFoundError -> return! RequestErrors.NOT_FOUND "No user found by this id" next ctx
-            | RenameResult.UserUpdated updatedUser -> return! Successful.OK (Serialization.json updatedUser) next ctx
+            | RenameResult.UserUpdated updatedUser -> return! Successful.ok (Serialization.json updatedUser) next ctx
     }
 
 type CreateUserRequestDTO = { Name: string; Quota: int }
@@ -92,7 +92,7 @@ let createUser: HttpHandler =
             return! ServerErrors.INTERNAL_ERROR $"Error: Could not store root folder for new user. %s{msg}" next ctx
           | InvalidUserError msg ->
             return! RequestErrors.UNPROCESSABLE_ENTITY $"Could not create user, input data invalid! %s{msg}" next ctx
-          | Stored user -> return! Successful.CREATED (Serialization.json user) next ctx
+          | Stored user -> return! Successful.created (Serialization.json user) next ctx
     }
 
 let getTotalBytesStoredByUser (rawUserId: int) : HttpHandler =
@@ -101,7 +101,7 @@ let getTotalBytesStoredByUser (rawUserId: int) : HttpHandler =
     let entryRepo = ctx.GetService<IEntryRepository>()
 
     let formatMsg (userName, count) =
-      text $"User %s{userName} has a total of %d{count} bytes stored"
+      $"User %s{userName} has a total of %d{count} bytes stored"
 
     match UserId.ofRaw rawUserId with
     | Error(Validation.ValidationError msg) ->
@@ -123,9 +123,7 @@ let getLargestEntry (rawUserId: int) : HttpHandler =
 
     let formatMsg ((largestEntry: Entry), (path: EntryPath)) =
       let (EntryPath rawPath) = path
-
-      text
-        $"The largest file for the user with id %d{rawUserId} is entry id %d{Entry.getId largestEntry |> EntryId.toRaw} with path %s{rawPath}"
+      $"The largest file for the user with id %d{rawUserId} is entry id %d{Entry.getId largestEntry |> EntryId.toRaw} with path %s{rawPath}"
 
     match UserId.ofRaw rawUserId with
     | Error(Validation.ValidationError msg) ->

@@ -18,6 +18,6 @@ let webApp: HttpHandler =
 
       POST >=> route "/user" >=> User.createUser
 
-      GET >=> routef "user/%i/bytes" User.getTotalBytesStoredByUser
+      GET >=> routef "/user/%i/bytes" User.getTotalBytesStoredByUser
 
-      GET >=> routef "user/%i/largest" User.getLargestEntry ]
+      GET >=> routef "/user/%i/largest" User.getLargestEntry ]
